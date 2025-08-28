@@ -1,5 +1,47 @@
 # 自动化AI任务执行系统设计文档
 
+## 📋 系统概览
+
+### 支持的任务类型
+本系统支持以下5种任务类型，每种任务都可以独立配置和调度：
+
+1. **🔧 编码任务 (coding)**
+   - AI自动生成代码，支持分支创建和Git提交
+   - 与走查任务协作，通过状态文件协调执行流程
+
+2. **🔍 走查任务 (review)**
+   - AI代码审查，分析代码质量和设计合理性
+   - 支持协作模式（与编码任务配合）和独立模式
+
+3. **📚 文档任务 (doc)**
+   - AI自动生成Markdown格式文档
+   - 支持技术文档、API文档、用户手册等
+
+4. **📋 需求评审任务 (requirement_review)** ⭐ 新增
+   - AI分析需求文档与代码实现的一致性
+   - 深入分析架构设计、接口定义、数据模型等
+
+5. **⚙️ 自定义任务 (custom)** ⭐ 新增
+   - 支持任意场景的AI任务，高度灵活
+   - 支持多种输出格式（Markdown、Excel、PPT等）
+
+### 核心特性
+- **智能调度**：基于crontab表达式的定时任务执行
+- **AI驱动**：支持Claude和DeepSeek等多种AI模型
+- **Git集成**：完整的GitHub和GitLab自动化操作
+- **状态协调**：智能的任务状态管理和协作机制
+- **通知系统**：钉钉机器人实时通知和告警
+
+### 任务类型对比表
+
+| 任务类型 | 主要功能 | 输入来源 | 输出格式 | 协作关系 | 典型应用场景 |
+|---------|---------|---------|---------|---------|-------------|
+| **编码任务** | AI代码生成 | 需求描述、代码上下文 | 代码文件 | 与走查任务协作 | 功能开发、代码重构 |
+| **走查任务** | 代码质量审查 | 代码变更、编码规范 | Markdown报告 | 与编码任务协作 | 代码审查、质量检查 |
+| **文档任务** | 文档自动生成 | 代码、需求描述 | Markdown文档 | 独立执行 | 技术文档、API文档 |
+| **需求评审** | 需求与代码一致性分析 | 需求文档、代码实现 | Markdown报告 | 独立执行 | 需求验证、架构评审 |
+| **自定义任务** | 灵活AI任务 | 自定义输入源 | 多种格式 | 独立执行 | 代码分析、报告生成 |
+
 ## 1. 系统架构概述
 
 ### 1.1 整体架构
@@ -25,8 +67,8 @@ graph TD
 ```
 
 ### 1.2 核心组件
-- **任务调度器**：基于crontab表达式的定时任务调度
-- **任务执行器**：执行编码、走查、文档生成任务
+- **任务调度器**：基于crontab表达式的定时任务调度，支持5种任务类型
+- **任务执行器**：执行编码、走查、文档生成、需求评审、自定义任务
 - **AI服务管理器**：管理Claude和DeepSeek API调用
 - **Git操作管理器**：处理GitHub和GitLab操作
 - **状态协调器**：协调编码者和走查者的交替执行
@@ -51,7 +93,9 @@ auto-coder/
 │   ├── tasks/                # 任务类型
 │   │   ├── coding_task.py    # 编码任务
 │   │   ├── review_task.py    # 走查任务
-│   │   └── doc_task.py       # 文档任务
+│   │   ├── doc_task.py       # 文档任务
+│   │   ├── requirement_review_task.py  # 需求评审任务
+│   │   └── custom_task.py    # 自定义任务
 │   ├── utils/                # 工具类
 │   │   ├── logger.py         # 日志工具
 │   │   ├── file_utils.py     # 文件操作工具
@@ -119,7 +163,9 @@ system:
   default_timeout: 300
 ```
 
-#### 任务配置文件示例 (tasks/coding_task.yaml)
+#### 任务配置文件示例
+
+##### 编码任务配置 (tasks/coding_task.yaml)
 ```yaml
 task_id: "feature_001"
 name: "用户管理功能开发"
@@ -160,6 +206,92 @@ notify:
   on_complete: true
   on_error: true
   at_users: ["张三"]
+```
+
+##### 需求评审任务配置 (tasks/requirement_review_task.yaml)
+```yaml
+task_id: "req_review_001"
+name: "用户管理需求评审"
+type: "requirement_review"
+priority: 2
+enabled: true
+
+# 调度配置
+schedule:
+  cron_expressions:
+    - "0 10 * * 1"     # 每周一10点执行
+
+# 需求文档配置
+requirement:
+  document_path: "./requirements/user-management-requirements.md"
+  document_type: "markdown"  # markdown 或 word
+
+# 代码参考配置
+code_reference:
+  project_path: "D:/projects/user-management"
+  branch: "main"
+  package_paths:
+    - "src/main/java/com/example/user"
+    - "src/main/java/com/example/auth"
+  analysis_depth: "full"  # full: 架构设计、接口定义、数据模型等
+
+# AI配置
+ai:
+  primary_model: "claude"
+  fallback_model: "deepseek"
+  prompt_template: "请分析需求文档与代码实现的一致性，重点关注架构设计、接口定义、数据模型等方面的合理性"
+
+# 输出配置
+output:
+  review_output: "./outputs/requirement_reviews"
+  format: "markdown"
+
+# 通知配置
+notify:
+  on_start: true
+  on_complete: true
+  on_error: true
+  at_users: ["产品经理", "架构师"]
+```
+
+##### 自定义任务配置 (tasks/custom_task.yaml)
+```yaml
+task_id: "custom_001"
+name: "代码质量分析报告"
+type: "custom"
+priority: 3
+enabled: true
+
+# 调度配置
+schedule:
+  cron_expressions:
+    - "0 20 * * 5"     # 每周五20点执行
+
+# 任务目标配置
+task_objective:
+  description: "分析项目代码质量，生成综合报告"
+  input_sources:
+    - "D:/projects/user-management"
+    - "./metrics/code_quality.json"
+
+# AI配置
+ai:
+  primary_model: "claude"
+  fallback_model: "deepseek"
+  custom_prompt: "请分析项目代码质量，包括代码复杂度、测试覆盖率、技术债务等方面，生成详细的评估报告"
+
+# 输出配置
+output:
+  format: "markdown"  # 支持 markdown, excel, ppt
+  output_path: "./outputs/custom_tasks"
+  filename_template: "code_quality_report_{timestamp}"
+
+# 通知配置
+notify:
+  on_start: true
+  on_complete: true
+  on_error: true
+  at_users: ["技术负责人"]
 ```
 
 ### 2.3 状态文件结构
@@ -275,11 +407,25 @@ class TaskExecutor:
             self._execute_review_task()
         elif self.task_config.type == "doc":
             self._execute_doc_task()
+        elif self.task_config.type == "requirement_review":
+            self._execute_requirement_review_task()
+        elif self.task_config.type == "custom":
+            self._execute_custom_task()
     
     def _execute_coding_task(self):
         """执行编码任务"""
         coding_task = CodingTask(self.task_config, self.ai_service, self.git_service)
         coding_task.execute()
+    
+    def _execute_requirement_review_task(self):
+        """执行需求评审任务"""
+        requirement_review_task = RequirementReviewTask(self.task_config, self.ai_service, self.git_service)
+        requirement_review_task.execute()
+    
+    def _execute_custom_task(self):
+        """执行自定义任务"""
+        custom_task = CustomTask(self.task_config, self.ai_service, self.git_service)
+        custom_task.execute()
 ```
 
 ### 3.3 状态协调器 (StateManager)
@@ -445,6 +591,164 @@ class ReviewTask:
         return self._parse_review_response(response)
 ```
 
+### 4.3 需求评审任务 (RequirementReviewTask)
+```python
+class RequirementReviewTask:
+    """需求评审任务实现"""
+    
+    def __init__(self, config, ai_service, git_service):
+        self.config = config
+        self.ai_service = ai_service
+        self.git_service = git_service
+    
+    def execute(self):
+        """执行需求评审任务"""
+        try:
+            # 1. 读取需求文档
+            requirement_doc = self._read_requirement_document()
+            
+            # 2. 获取代码实现
+            code_implementation = self._get_code_implementation()
+            
+            # 3. AI分析需求与代码的一致性
+            review_result = self._analyze_requirement_code_consistency(
+                requirement_doc, code_implementation
+            )
+            
+            # 4. 生成评审意见
+            review_opinions = self._generate_review_opinions(review_result)
+            
+            # 5. 输出评审报告
+            self._output_review_report(review_opinions)
+            
+        except Exception as e:
+            self._handle_error(e)
+    
+    def _read_requirement_document(self):
+        """读取需求文档"""
+        doc_path = self.config.requirement.document_path
+        doc_type = self.config.requirement.document_type
+        
+        if doc_type == "markdown":
+            with open(doc_path, 'r', encoding='utf-8') as f:
+                return f.read()
+        elif doc_type == "word":
+            # 使用python-docx读取Word文档
+            from docx import Document
+            doc = Document(doc_path)
+            return '\n'.join([paragraph.text for paragraph in doc.paragraphs])
+        else:
+            raise ValueError(f"Unsupported document type: {doc_type}")
+    
+    def _get_code_implementation(self):
+        """获取代码实现"""
+        project_path = self.config.code_reference.project_path
+        branch = self.config.code_reference.branch
+        package_paths = self.config.code_reference.package_paths
+        
+        # 切换到指定分支
+        self.git_service.checkout_branch(project_path, branch)
+        
+        # 读取指定包路径的代码
+        code_content = {}
+        for package_path in package_paths:
+            full_path = os.path.join(project_path, package_path)
+            if os.path.exists(full_path):
+                code_content[package_path] = self._read_package_code(full_path)
+        
+        return code_content
+    
+    def _analyze_requirement_code_consistency(self, requirement_doc, code_implementation):
+        """AI分析需求与代码的一致性"""
+        prompt = self._build_analysis_prompt(requirement_doc, code_implementation)
+        response = self.ai_service.analyze_requirement_code(
+            model=self.config.ai.primary_model,
+            prompt=prompt,
+            requirement_doc=requirement_doc,
+            code_implementation=code_implementation
+        )
+        return self._parse_analysis_response(response)
+```
+
+### 4.4 自定义任务 (CustomTask)
+```python
+class CustomTask:
+    """自定义任务实现"""
+    
+    def __init__(self, config, ai_service, git_service):
+        self.config = config
+        self.ai_service = ai_service
+        self.git_service = git_service
+    
+    def execute(self):
+        """执行自定义任务"""
+        try:
+            # 1. 准备输入数据
+            input_data = self._prepare_input_data()
+            
+            # 2. 构建AI提示词
+            prompt = self._build_custom_prompt(input_data)
+            
+            # 3. 调用AI服务
+            ai_response = self.ai_service.execute_custom_task(
+                model=self.config.ai.primary_model,
+                prompt=prompt,
+                input_data=input_data
+            )
+            
+            # 4. 处理AI响应
+            processed_result = self._process_ai_response(ai_response)
+            
+            # 5. 输出结果
+            self._output_result(processed_result)
+            
+        except Exception as e:
+            self._handle_error(e)
+    
+    def _prepare_input_data(self):
+        """准备输入数据"""
+        input_sources = self.config.task_objective.input_sources
+        input_data = {}
+        
+        for source in input_sources:
+            if os.path.isfile(source):
+                # 读取文件内容
+                with open(source, 'r', encoding='utf-8') as f:
+                    input_data[os.path.basename(source)] = f.read()
+            elif os.path.isdir(source):
+                # 读取目录内容
+                input_data[os.path.basename(source)] = self._read_directory_content(source)
+        
+        return input_data
+    
+    def _output_result(self, result):
+        """输出结果"""
+        output_format = self.config.output.format
+        output_path = self.config.output.output_path
+        filename_template = self.config.output.filename_template
+        
+        # 生成文件名
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = filename_template.format(timestamp=timestamp)
+        
+        if output_format == "markdown":
+            file_path = os.path.join(output_path, f"{filename}.md")
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(result)
+        elif output_format == "excel":
+            # 使用pandas生成Excel文件
+            import pandas as pd
+            file_path = os.path.join(output_path, f"{filename}.xlsx")
+            # 这里需要根据result的结构来生成Excel
+            # 具体实现根据实际需求调整
+        elif output_format == "ppt":
+            # 使用python-pptx生成PPT文件
+            from pptx import Presentation
+            file_path = os.path.join(output_path, f"{filename}.pptx")
+            # 这里需要根据result的结构来生成PPT
+            # 具体实现根据实际需求调整
+```
+
 ## 5. 服务层设计
 
 ### 5.1 AI服务管理器 (AIService)
@@ -501,6 +805,22 @@ class AIService:
             raise ValueError(f"Unsupported AI model: {model}")
         
         return client.review_code(prompt, code_changes, coding_standards)
+    
+    def analyze_requirement_code(self, model, prompt, requirement_doc, code_implementation):
+        """需求与代码一致性分析"""
+        client = self.clients.get(model)
+        if not client:
+            raise ValueError(f"Unsupported AI model: {model}")
+        
+        return client.analyze_requirement_code(prompt, requirement_doc, code_implementation)
+    
+    def execute_custom_task(self, model, prompt, input_data):
+        """执行自定义任务"""
+        client = self.clients.get(model)
+        if not client:
+            raise ValueError(f"Unsupported AI model: {model}")
+        
+        return client.execute_custom_task(prompt, input_data)
 ```
 
 ### 5.2 Git操作服务 (GitService)
@@ -774,14 +1094,34 @@ python src/cli/main.py list
 
 ## 11. 总结
 
-本设计文档详细描述了自动化AI任务执行系统的架构设计、核心模块、配置管理、部署运行等各个方面。系统采用模块化设计，具有良好的扩展性和维护性，能够满足编码、走查、文档生成等多种自动化任务需求。
+本设计文档详细描述了自动化AI任务执行系统的架构设计、核心模块、配置管理、部署运行等各个方面。系统采用模块化设计，具有良好的扩展性和维护性，能够满足5种任务类型的自动化执行需求。
 
-系统的主要特点：
+### 系统支持的5种任务类型
+
+1. **编码任务 (coding)**：AI自动生成代码，支持分支创建和Git提交
+2. **走查任务 (review)**：AI代码审查，分析代码质量和设计合理性
+3. **文档任务 (doc)**：AI自动生成Markdown格式文档
+4. **需求评审任务 (requirement_review)**：AI分析需求文档与代码实现的一致性
+5. **自定义任务 (custom)**：支持任意场景的AI任务，高度灵活
+
+### 系统的主要特点
+
 1. **灵活的调度机制**：支持crontab表达式的定时任务执行
 2. **智能的状态协调**：通过状态文件实现编码者和走查者的协作
 3. **多AI模型支持**：支持Claude和DeepSeek等多种AI模型
 4. **完整的Git集成**：支持GitHub和GitLab的自动化操作
 5. **丰富的通知机制**：支持钉钉机器人通知
 6. **友好的命令行接口**：提供完整的任务管理功能
+7. **统一的任务管理**：所有任务类型使用统一的配置和调度机制
+8. **灵活的输入输出**：支持多种文档格式和输出格式
 
-通过这个系统，用户可以自动化地完成代码开发、代码审查、文档生成等任务，大大提高开发效率和代码质量。
+### 应用场景
+
+通过这个系统，用户可以自动化地完成：
+- **代码开发**：AI辅助编码，自动分支管理和代码提交
+- **代码审查**：AI代码质量分析，设计合理性评估
+- **文档生成**：自动生成技术文档、API文档等
+- **需求评审**：AI分析需求与代码的一致性，发现设计问题
+- **自定义分析**：根据具体需求定制AI分析任务
+
+系统能够大大提高开发效率、代码质量和项目管理水平，是一个功能完整的AI辅助开发平台。
