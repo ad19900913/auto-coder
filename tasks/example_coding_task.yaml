@@ -3,7 +3,7 @@ task_id: "example_coding_task"
 name: "示例编码任务"
 description: "这是一个示例编码任务，用于演示系统功能"
 type: "coding"
-enabled: true
+enabled: false
 priority: 5
 
 # 调度配置

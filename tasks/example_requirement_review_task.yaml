@@ -3,7 +3,7 @@ task_id: "example_requirement_review_task"
 name: "示例需求评审任务"
 description: "这是一个示例需求评审任务，用于演示系统功能"
 type: "requirement_review"
-enabled: true
+enabled: false
 priority: 2
 
 # 调度配置

@@ -3,7 +3,7 @@ task_id: "example_doc_task"
 name: "示例文档生成任务"
 description: "这是一个示例文档生成任务，用于演示系统功能"
 type: "doc"
-enabled: true
+enabled: false
 priority: 3
 
 # 调度配置
