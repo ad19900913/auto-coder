@@ -1,0 +1,29 @@
+# 核心依赖
+PyYAML>=6.0
+click>=8.1.0
+APScheduler>=3.10.0
+requests>=2.28.0
+
+# AI服务相关
+anthropic>=0.7.0
+openai>=1.0.0
+
+# Git操作相关
+GitPython>=3.1.0
+PyGithub>=1.59.0
+python-gitlab>=3.15.0
+
+# 文档处理
+python-docx>=0.8.11
+pandas>=1.5.0
+python-pptx>=0.6.21
+
+# 日志和工具
+colorlog>=6.7.0
+python-dateutil>=2.8.0
+
+# 开发和测试
+pytest>=7.0.0
+pytest-mock>=3.10.0
+black>=22.0.0
+flake8>=5.0.0

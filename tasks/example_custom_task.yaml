@@ -1,0 +1,115 @@
+# 示例自定义任务配置
+task_id: "example_custom_task"
+name: "示例自定义任务"
+description: "这是一个示例自定义任务，用于演示系统功能"
+type: "custom"
+enabled: true
+priority: 4
+
+# 调度配置
+schedule:
+  type: "cron"
+  cron:
+    minute: "0"
+    hour: "20"
+    day: "*"
+    month: "*"
+    day_of_week: "5"  # 每周五晚上8点
+
+# 自定义任务配置
+custom:
+  # 任务目标配置
+  task_objective:
+    description: "分析项目代码质量，生成综合报告"
+    input_sources:
+      - "./example_project"
+      - "./metrics/code_quality.json"
+      - "./reports/previous_reviews"
+    
+    # 任务复杂度
+    complexity: "high"  # low, medium, high
+    estimated_duration: "15-20分钟"
+    
+    # 具体目标
+    goals:
+      - "代码复杂度分析"
+      - "测试覆盖率评估"
+      - "技术债务识别"
+      - "性能瓶颈分析"
+      - "安全漏洞检查"
+  
+  # 输出要求
+  output_requirements:
+    format: "markdown"  # 支持 markdown, excel, ppt
+    include_charts: true
+    include_recommendations: true
+    include_priority_ranking: true
+    include_action_items: true
+
+# AI配置
+ai:
+  primary_model: "claude"
+  fallback_model: "deepseek"
+  custom_prompt: "请分析项目代码质量，包括代码复杂度、测试覆盖率、技术债务等方面，生成详细的评估报告。报告应该包含具体的数据分析、问题识别、改进建议和优先级排序。"
+
+# 输出配置
+output:
+  format: "markdown"
+  output_path: "./outputs/custom_tasks"
+  filename_template: "code_quality_report_{timestamp}"
+  
+  # 多格式输出支持
+  multi_format:
+    markdown: true
+    excel: false
+    ppt: false
+  
+  # 输出内容结构
+  content_structure:
+    executive_summary: true
+    detailed_analysis: true
+    charts_and_graphs: true
+    recommendations: true
+    action_plan: true
+
+# 重试配置
+retry:
+  max_attempts: 3
+  base_delay: 120
+  max_delay: 1800
+  backoff_multiplier: 2
+  jitter: 0.1
+
+# 超时配置
+timeout:
+  task_timeout: 1800  # 30分钟
+  ai_timeout: 900     # 15分钟
+  data_processing_timeout: 300  # 5分钟
+
+# 通知配置
+notify:
+  on_start: true
+  on_complete: true
+  on_error: true
+  at_users: ["@技术负责人", "@质量工程师"]
+  
+  # 特殊通知条件
+  special_notifications:
+    critical_issues: true      # 发现关键问题时通知
+    quality_score_below: 70   # 质量分数低于70时通知
+    high_priority_issues: 3   # 高优先级问题超过3个时通知
+
+# 任务依赖配置
+dependencies:
+  required_tasks: []  # 依赖的其他任务
+  required_files:     # 依赖的文件
+    - "./example_project"
+    - "./metrics/code_quality.json"
+  
+# 执行策略
+execution_strategy:
+  parallel_processing: false  # 是否支持并行处理
+  resource_requirements:      # 资源需求
+    memory: "512MB"
+    cpu: "1 core"
+  priority_level: "normal"    # 执行优先级

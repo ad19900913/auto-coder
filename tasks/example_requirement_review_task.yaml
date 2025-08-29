@@ -1,0 +1,90 @@
+# 示例需求评审任务配置
+task_id: "example_requirement_review_task"
+name: "示例需求评审任务"
+description: "这是一个示例需求评审任务，用于演示系统功能"
+type: "requirement_review"
+enabled: true
+priority: 2
+
+# 调度配置
+schedule:
+  type: "cron"
+  cron:
+    minute: "0"
+    hour: "10"
+    day: "*"
+    month: "*"
+    day_of_week: "1"  # 每周一上午10点
+
+# 需求评审任务配置
+requirement_review:
+  # 需求文档配置
+  requirement:
+    document_path: "./requirements/user_management_requirements.md"
+    document_type: "markdown"  # markdown 或 word
+  
+  # 代码参考配置
+  code_reference:
+    project_path: "./example_project"
+    branch: "main"
+    package_paths:
+      - "src/main/java/com/example/user"
+      - "src/main/java/com/example/auth"
+      - "src/main/java/com/example/role"
+    analysis_depth: "full"  # full: 架构设计、接口定义、数据模型等
+  
+  # 评审重点
+  review_focus:
+    architecture_consistency: true
+    interface_definition: true
+    data_model_consistency: true
+    business_logic_validation: true
+    security_requirements: true
+    performance_requirements: true
+  
+  # 输出要求
+  output_requirements:
+    format: "markdown"
+    include_summary: true
+    include_detailed_analysis: true
+    include_recommendations: true
+    include_risk_assessment: true
+
+# AI配置
+ai:
+  primary_model: "claude"
+  fallback_model: "deepseek"
+  prompt_template: "请分析需求文档与代码实现的一致性，重点关注架构设计、接口定义、数据模型等方面的合理性，并指出任何不一致或潜在问题"
+
+# 输出配置
+output:
+  review_output: "./outputs/requirement_reviews"
+  format: "markdown"
+  filename_template: "requirement_review_{timestamp}"
+
+# 重试配置
+retry:
+  max_attempts: 3
+  base_delay: 60
+  max_delay: 600
+  backoff_multiplier: 2
+  jitter: 0.1
+
+# 超时配置
+timeout:
+  task_timeout: 1200  # 20分钟
+  ai_timeout: 600     # 10分钟
+  code_analysis_timeout: 300  # 5分钟
+
+# 通知配置
+notify:
+  on_start: true
+  on_complete: true
+  on_error: true
+  at_users: ["@产品经理", "@架构师", "@技术负责人"]
+  
+  # 特殊通知条件
+  special_notifications:
+    critical_issues: true      # 发现关键问题时通知
+    high_risk_items: true      # 发现高风险项时通知
+    inconsistency_count: 5     # 不一致点超过5个时通知

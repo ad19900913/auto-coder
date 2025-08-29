@@ -1,0 +1,64 @@
+# 示例代码审查任务配置
+task_id: "example_review_task"
+name: "示例代码审查任务"
+description: "这是一个示例代码审查任务，用于演示系统功能"
+type: "review"
+enabled: true
+priority: 3
+
+# 调度配置
+schedule:
+  type: "cron"
+  cron:
+    minute: "0"
+    hour: "18"
+    day: "*"
+    month: "*"
+    day_of_week: "1-5"  # 周一到周五
+
+# 代码审查任务配置
+review:
+  project_path: "./example_project"
+  target_branch: "feature/ai-generated-code"
+  base_branch: "main"
+  review_time: "2024-01-15T18:00:00"
+  code_package_paths:
+    - "src"
+    - "tests"
+    - "utils"
+
+# AI服务配置
+ai:
+  provider: "claude"
+  model: "claude-3-sonnet-20240229"
+  max_tokens: 3000
+  temperature: 0.1
+  top_p: 0.9
+
+# Git服务配置
+git:
+  platform: "github"
+  repo_url: "https://github.com/example/example_project.git"
+  username: "example_user"
+
+# 重试配置
+retry:
+  max_attempts: 2
+  base_delay: 5
+  max_delay: 60
+  backoff_multiplier: 2
+  jitter: 0.1
+
+# 超时配置
+timeout:
+  task_timeout: 1200  # 20分钟
+  ai_timeout: 300     # 5分钟
+  git_timeout: 300    # 5分钟
+
+# 通知配置
+notifications:
+  on_start: true
+  on_complete: true
+  on_error: true
+  channels: ["dingtalk"]
+  at_users: ["@王五", "@赵六"]

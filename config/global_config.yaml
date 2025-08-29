@@ -1,0 +1,253 @@
+# 自动化AI任务执行系统 - 全局配置文件
+# 版本: 1.0
+# 更新时间: 2025-01-20
+
+# AI服务配置
+ai_services:
+  claude:
+    api_key: "${CLAUDE_API_KEY}"
+    base_url: "https://api.anthropic.com"
+    model: "claude-3-sonnet-20240229"
+    max_tokens: 4000
+    temperature: 0.1
+    
+    # 高级参数
+    parameters:
+      temperature: 0.1
+      max_tokens: 4000
+      top_p: 0.9
+      frequency_penalty: 0.0
+      presence_penalty: 0.0
+      stop_sequences: []
+    
+    # 任务类型特定参数
+    task_parameters:
+      coding:
+        temperature: 0.05
+        max_tokens: 6000
+      review:
+        temperature: 0.1
+        max_tokens: 3000
+      requirement_review:
+        temperature: 0.15
+        max_tokens: 5000
+  
+  deepseek:
+    api_key: "${DEEPSEEK_API_KEY}"
+    base_url: "https://api.deepseek.com"
+    model: "deepseek-coder"
+    max_tokens: 4000
+    temperature: 0.1
+    
+    # 高级参数
+    parameters:
+      temperature: 0.1
+      max_tokens: 4000
+      top_p: 0.9
+      repetition_penalty: 1.0
+      top_k: 40
+    
+    # 任务类型特定参数
+    task_parameters:
+      coding:
+        temperature: 0.05
+        max_tokens: 6000
+      review:
+        temperature: 0.1
+        max_tokens: 3000
+      requirement_review:
+        temperature: 0.15
+        max_tokens: 5000
+
+# Git配置
+git:
+  github:
+    token: "${GITHUB_TOKEN}"
+    username: "${GITHUB_USERNAME}"
+  gitlab:
+    token: "${GITLAB_TOKEN}"
+    base_url: "${GITLAB_BASE_URL}"
+
+# 编码规范配置（按语言分类）
+coding_standards:
+  java:
+    file_path: "./standards/java_coding_standards.md"
+    enabled: true
+    description: "Java编码规范"
+    version: "1.0"
+    last_updated: "2025-01-20"
+  
+  python:
+    file_path: "./standards/python_coding_standards.md"
+    enabled: true
+    description: "Python编码规范"
+    version: "1.0"
+    last_updated: "2025-01-20"
+  
+  frontend:
+    file_path: "./standards/frontend_coding_standards.md"
+    enabled: true
+    description: "前端编码规范"
+    version: "1.0"
+    last_updated: "2025-01-20"
+  
+  general:
+    file_path: "./standards/general_coding_standards.md"
+    enabled: true
+    description: "通用编码规范"
+    version: "1.0"
+    last_updated: "2025-01-20"
+  
+  redlines:
+    file_path: "./standards/redline_standards.md"
+    enabled: true
+    description: "编码红线规范"
+    version: "1.0"
+    last_updated: "2025-01-20"
+
+# 任务超时时间配置
+task_timeouts:
+  coding: 1800      # 30分钟
+  review: 900       # 15分钟
+  doc: 600          # 10分钟
+  requirement_review: 1200  # 20分钟
+  custom: 1800      # 30分钟
+  
+  global:
+    default: 600    # 默认超时时间
+    max: 7200       # 最大超时时间（2小时）
+    warning_threshold: 0.8  # 超时警告阈值
+
+# 重试配置
+retry_config:
+  max_attempts: 3
+  base_delay: 60
+  max_delay: 3600
+  backoff_multiplier: 2
+  jitter: 0.1
+  
+  task_specific:
+    coding:
+      max_attempts: 5
+      base_delay: 120
+    git_operations:
+      max_attempts: 3
+      base_delay: 30
+
+# 状态文件管理配置
+state_management:
+  cleanup_enabled: true
+  retention_days: 90
+  archive_enabled: true
+  archive_path: "./archives/states"
+  cleanup_schedule: "0 2 * * *"  # 每天凌晨2点清理
+  
+  cleanup_strategy:
+    completed_tasks: "archive"
+    failed_tasks: "archive"
+    running_tasks: "skip"
+    expired_tasks: "delete"
+  
+  archive:
+    compression: true
+    compression_format: "zip"
+    max_archive_size: "100MB"
+    archive_retention_days: 365
+  
+  state_file:
+    max_size: "10MB"
+    backup_enabled: true
+    backup_count: 3
+    backup_interval: "1h"
+
+# 通知模板配置
+notification_templates:
+  variables:
+    task_name: "{task_name}"
+    task_type: "{task_type}"
+    task_id: "{task_id}"
+    duration: "{duration}"
+    error_message: "{error_message}"
+    files_count: "{files_count}"
+    issues_count: "{issues_count}"
+    inconsistencies_count: "{inconsistencies_count}"
+  
+  common:
+    task_start: "🚀 任务 {task_name} ({task_type}) 开始执行"
+    task_complete: "✅ 任务 {task_name} 执行完成，耗时 {duration}"
+    task_error: "❌ 任务 {task_name} 执行失败: {error_message}"
+  
+  task_specific:
+    coding:
+      start: "🔧 编码任务 {task_name} 开始执行"
+      complete: "✅ 编码任务 {task_name} 完成，生成了 {files_count} 个文件"
+      error: "❌ 编码任务 {task_name} 失败: {error_message}"
+      review_required: "🔍 编码任务 {task_name} 完成，等待代码审查"
+    
+    review:
+      start: "🔍 代码审查任务 {task_name} 开始执行"
+      complete: "✅ 代码审查完成，发现 {issues_count} 个问题"
+      error: "❌ 代码审查失败: {error_message}"
+      issues_found: "⚠️ 代码审查发现 {issues_count} 个问题，需要重新编码"
+      no_issues: "✅ 代码审查通过，任务完成"
+    
+    doc:
+      start: "📚 文档生成任务 {task_name} 开始执行"
+      complete: "✅ 文档生成完成，输出到 {output_path}"
+      error: "❌ 文档生成失败: {error_message}"
+    
+    requirement_review:
+      start: "📋 需求评审任务 {task_name} 开始执行"
+      complete: "✅ 需求评审完成，发现 {inconsistencies_count} 个不一致点"
+      error: "❌ 需求评审失败: {error_message}"
+      critical_issues: "🚨 需求评审发现关键问题，请及时处理"
+    
+    custom:
+      start: "⚙️ 自定义任务 {task_name} 开始执行"
+      complete: "✅ 自定义任务 {task_name} 执行完成"
+      error: "❌ 自定义任务 {task_name} 执行失败: {error_message}"
+  
+  notification_levels:
+    info: ["task_start", "task_complete"]
+    warning: ["review_required", "issues_found"]
+    error: ["task_error", "critical_issues"]
+  
+  channels:
+    dingtalk:
+      enabled: true
+      webhook_url: "${DINGTALK_WEBHOOK}"
+      secret: "${DINGTALK_SECRET}"
+      at_users: ["张三", "李四"]
+      at_all: false
+    
+    email:
+      enabled: false
+      smtp_server: ""
+      smtp_port: 587
+      username: ""
+      password: ""
+    
+    webhook:
+      enabled: false
+      url: ""
+      headers: {}
+
+# 通知配置
+notification:
+  dingtalk:
+    webhook_url: "${DINGTALK_WEBHOOK}"
+    secret: "${DINGTALK_SECRET}"
+    at_users: ["张三", "李四"]
+
+# 日志配置
+logging:
+  level: "INFO"
+  retention_days: 30
+  max_file_size: "10MB"
+
+# 系统配置
+system:
+  work_dir: "./states"
+  output_dir: "./outputs"
+  max_concurrent_tasks: 5
+  default_timeout: 300

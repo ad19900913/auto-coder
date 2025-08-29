@@ -1,0 +1,74 @@
+# 示例文档生成任务配置
+task_id: "example_doc_task"
+name: "示例文档生成任务"
+description: "这是一个示例文档生成任务，用于演示系统功能"
+type: "doc"
+enabled: true
+priority: 3
+
+# 调度配置
+schedule:
+  type: "cron"
+  cron:
+    minute: "0"
+    hour: "14"
+    day: "*"
+    month: "*"
+    day_of_week: "1-5"  # 周一到周五下午2点
+
+# 文档生成任务配置
+doc:
+  prompt: "请为我们的用户管理系统生成一份完整的API文档，包括用户管理、权限管理、角色管理等模块的接口说明"
+  doc_type: "api_documentation"
+  output_format: "markdown"  # 支持 markdown, html, word
+  output_location: "./outputs/docs"
+  filename_template: "user_management_api_{timestamp}"
+  
+  # 文档结构配置
+  structure:
+    include_toc: true
+    include_examples: true
+    include_error_codes: true
+    include_rate_limits: true
+  
+  # 内容要求
+  requirements:
+    language: "中文"
+    detail_level: "详细"
+    include_diagrams: false
+    include_code_samples: true
+
+# AI服务配置
+ai:
+  provider: "claude"
+  model: "claude-3-sonnet-20240229"
+  max_tokens: 4000
+  temperature: 0.1
+  top_p: 0.9
+
+# 输出配置
+output:
+  format: "markdown"
+  output_path: "./outputs/docs"
+  filename_template: "user_management_api_{timestamp}"
+
+# 重试配置
+retry:
+  max_attempts: 3
+  base_delay: 30
+  max_delay: 300
+  backoff_multiplier: 2
+  jitter: 0.1
+
+# 超时配置
+timeout:
+  task_timeout: 600   # 10分钟
+  ai_timeout: 300     # 5分钟
+
+# 通知配置
+notifications:
+  on_start: true
+  on_complete: true
+  on_error: true
+  channels: ["dingtalk"]
+  at_users: ["@技术文档员"]
