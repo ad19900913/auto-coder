@@ -310,3 +310,41 @@ class ConfigManager:
             'ai_services': list(self.global_config.get('ai_services', {}).keys()),
             'last_updated': datetime.now().isoformat()
         }
+    
+    def get_task_config(self, task_id: str) -> Optional[Dict[str, Any]]:
+        """
+        获取指定任务的配置
+        
+        Args:
+            task_id: 任务ID
+            
+        Returns:
+            任务配置字典，如果不存在则返回None
+        """
+        return self.task_configs.get(task_id)
+    
+    def get_all_task_configs(self) -> Dict[str, Any]:
+        """
+        获取所有任务配置
+        
+        Returns:
+            所有任务配置字典
+        """
+        return self.task_configs.copy()
+    
+    def get_task_config_by_type(self, task_type: str) -> List[Dict[str, Any]]:
+        """
+        根据任务类型获取配置列表
+        
+        Args:
+            task_type: 任务类型
+            
+        Returns:
+            该类型的所有任务配置列表
+        """
+        tasks = []
+        for task_id, config in self.task_configs.items():
+            if config.get('type') == task_type:
+                config['task_id'] = task_id
+                tasks.append(config)
+        return tasks

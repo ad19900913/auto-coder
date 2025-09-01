@@ -78,7 +78,7 @@ notify:
   on_start: true
   on_complete: true
   on_error: true
-  at_users: ["@产品经理", "@架构师", "@技术负责人"]
+  at_users: ["产品经理", "架构师", "技术负责人"]
   
   # 特殊通知条件
   special_notifications:

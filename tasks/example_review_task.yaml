@@ -24,9 +24,10 @@ review:
     - "tests"
     - "utils"
 
-# AI服务配置
+# AI配置
 ai:
-  provider: "claude"
+  primary_model: "claude"
+  fallback_model: "deepseek"
   model: "claude-3-sonnet-20240229"
   max_tokens: 3000
   temperature: 0.1
@@ -37,6 +38,11 @@ git:
   platform: "github"
   repo_url: "https://github.com/example/example_project.git"
   username: "example_user"
+
+# 输出配置
+output:
+  review_output: "./outputs/reviews"
+  format: "markdown"
 
 # 重试配置
 retry:
@@ -53,9 +59,8 @@ timeout:
   git_timeout: 300    # 5分钟
 
 # 通知配置
-notifications:
+notify:
   on_start: true
   on_complete: true
   on_error: true
-  channels: ["dingtalk"]
-  at_users: ["@王五", "@赵六"]
+  at_users: ["王五", "赵六"]

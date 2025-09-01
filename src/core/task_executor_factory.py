@@ -333,10 +333,18 @@ class TaskExecutorFactory:
         schedule_type = schedule_config.get('type', 'cron')
         
         if schedule_type == 'cron':
-            # 验证cron配置
-            cron_config = schedule_config.get('cron', {})
-            if not cron_config:
-                errors.append("cron类型调度缺少cron配置")
+            # 检查新的cron_expressions格式（优先）
+            cron_expressions = schedule_config.get('cron_expressions', [])
+            if cron_expressions:
+                # 验证每个cron表达式
+                for i, expr in enumerate(cron_expressions):
+                    if not self._is_valid_cron_expression(expr):
+                        errors.append(f"无效的cron表达式[{i}]: {expr}")
+            else:
+                # 检查旧的cron字段格式（向后兼容）
+                cron_config = schedule_config.get('cron', {})
+                if not cron_config:
+                    errors.append("cron类型调度缺少cron_expressions或cron配置")
         
         elif schedule_type == 'interval':
             # 验证间隔配置
@@ -358,8 +366,93 @@ class TaskExecutorFactory:
         else:
             errors.append(f"不支持的调度类型: {schedule_type}")
         
-        return errors
-    
+                return errors
+
+    def _is_valid_cron_expression(self, cron_expr: str) -> bool:
+        """
+        验证cron表达式的有效性
+        
+        Args:
+            cron_expr: cron表达式字符串
+            
+        Returns:
+            是否有效
+        """
+        try:
+            # 检查基本格式：5个字段，用空格分隔
+            parts = cron_expr.split()
+            if len(parts) != 5:
+                return False
+            
+            minute, hour, day, month, day_of_week = parts
+            
+            # 验证每个字段的格式
+            def validate_field(value: str, min_val: int, max_val: int, field_name: str) -> bool:
+                if value == '*':
+                    return True
+                
+                # 检查范围格式：1-5
+                if '-' in value:
+                    try:
+                        start, end = value.split('-')
+                        start_int, end_int = int(start), int(end)
+                        return min_val <= start_int <= end_int <= max_val
+                    except ValueError:
+                        return False
+                
+                # 检查步长格式：*/5
+                if '/' in value:
+                    try:
+                        range_part, step = value.split('/')
+                        step_int = int(step)
+                        if step_int <= 0:
+                            return False
+                        
+                        # 验证范围部分
+                        if range_part == '*':
+                            return True
+                        elif '-' in range_part:
+                            start, end = range_part.split('-')
+                            start_int, end_int = int(start), int(end)
+                            return min_val <= start_int <= end_int <= max_val
+                        else:
+                            val = int(range_part)
+                            return min_val <= val <= max_val
+                    except ValueError:
+                        return False
+                
+                # 检查列表格式：1,3,5
+                if ',' in value:
+                    try:
+                        values = [int(v) for v in value.split(',')]
+                        return all(min_val <= v <= max_val for v in values)
+                    except ValueError:
+                        return False
+                
+                # 检查单个值
+                try:
+                    val = int(value)
+                    return min_val <= val <= max_val
+                except ValueError:
+                    return False
+            
+            # 验证各个字段
+            if not validate_field(minute, 0, 59, 'minute'):
+                return False
+            if not validate_field(hour, 0, 23, 'hour'):
+                return False
+            if not validate_field(day, 1, 31, 'day'):
+                return False
+            if not validate_field(month, 1, 12, 'month'):
+                return False
+            if not validate_field(day_of_week, 0, 7, 'day_of_week'):
+                return False
+            
+            return True
+            
+        except Exception:
+            return False
+
     def _validate_ai_config(self, ai_config: Dict[str, Any]) -> list:
         """
         验证AI配置

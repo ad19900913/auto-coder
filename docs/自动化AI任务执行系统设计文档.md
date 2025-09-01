@@ -447,6 +447,9 @@ ai:
   fallback_model: "deepseek"
   coding_prompt: "开发用户管理功能，包括用户增删改查"
   review_prompt: "根据公司编码规范审查代码"
+  model: "claude-3-sonnet-20240229"
+  max_tokens: 4000
+  temperature: 0.1
 
 # 输出配置
 output:
@@ -525,12 +528,13 @@ schedule:
     - "0 20 * * 5"     # 每周五20点执行
     - "0 9 * * 1"      # 每周一上午9点执行
 
-# 任务目标配置
-task_objective:
-  description: "分析项目代码质量，生成综合报告"
-  input_sources:
-    - "D:/projects/user-management"
-    - "./metrics/code_quality.json"
+# 自定义任务配置
+custom:
+  task_objective:
+    description: "分析项目代码质量，生成综合报告"
+    input_sources:
+      - "D:/projects/user-management"
+      - "./metrics/code_quality.json"
 
 # AI配置
 ai:

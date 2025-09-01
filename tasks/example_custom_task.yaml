@@ -80,7 +80,7 @@ notify:
   on_start: true
   on_complete: true
   on_error: true
-  at_users: ["@技术负责人", "@质量工程师"]
+  at_users: ["技术负责人", "质量工程师"]
   
   # 特殊通知条件
   special_notifications:

@@ -13,18 +13,20 @@ schedule:
     - "0 9 * * 1-5"      # 周一到周五上午9点
     - "0 18 * * 1-5"     # 周一到周五下午6点
 
-# 编码任务配置
-coding:
-  project_path: "./example_project"
-  branch_name: "feature/ai-generated-code"
+# 项目配置
+project:
+  name: "example_project"
+  path: "./example_project"
+  branch: "feature/ai-generated-code"
   base_branch: "main"
-  prompt: "请生成一个Python函数，用于计算斐波那契数列的第n项"
-  output_file: "fibonacci.py"
-  commit_template: "feat: AI生成斐波那契数列计算函数\n\nTask: {task_id}\nTime: {timestamp}"
+  git_platform: "github"
 
-# AI服务配置
+# AI配置
 ai:
-  provider: "claude"
+  primary_model: "claude"
+  fallback_model: "deepseek"
+  coding_prompt: "请生成一个Python函数，用于计算斐波那契数列的第n项"
+  review_prompt: "根据公司编码规范审查代码"
   model: "claude-3-sonnet-20240229"
   max_tokens: 2000
   temperature: 0.1
@@ -35,6 +37,12 @@ git:
   platform: "github"
   repo_url: "https://github.com/example/example_project.git"
   username: "example_user"
+
+# 输出配置
+output:
+  review_output: "./outputs/reviews"
+  doc_output: "./outputs/docs"
+  log_output: "./logs"
 
 # 重试配置
 retry:
@@ -51,9 +59,8 @@ timeout:
   git_timeout: 600    # 10分钟
 
 # 通知配置
-notifications:
+notify:
   on_start: true
   on_complete: true
   on_error: true
-  channels: ["dingtalk"]
-  at_users: ["@张三", "@李四"]
+  at_users: ["张三", "李四"]

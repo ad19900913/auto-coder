@@ -35,9 +35,10 @@ doc:
     include_diagrams: false
     include_code_samples: true
 
-# AI服务配置
+# AI配置
 ai:
-  provider: "claude"
+  primary_model: "claude"
+  fallback_model: "deepseek"
   model: "claude-3-sonnet-20240229"
   max_tokens: 4000
   temperature: 0.1
@@ -63,9 +64,8 @@ timeout:
   ai_timeout: 300     # 5分钟
 
 # 通知配置
-notifications:
+notify:
   on_start: true
   on_complete: true
   on_error: true
-  channels: ["dingtalk"]
-  at_users: ["@技术文档员"]
+  at_users: ["技术文档员"]
