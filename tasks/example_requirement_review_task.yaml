@@ -9,12 +9,9 @@ priority: 2
 # 调度配置
 schedule:
   type: "cron"
-  cron:
-    minute: "0"
-    hour: "10"
-    day: "*"
-    month: "*"
-    day_of_week: "1"  # 每周一上午10点
+  cron_expressions:
+    - "0 10 * * 1"        # 每周一上午10点
+    - "0 14 * * 3"        # 每周三下午2点
 
 # 需求评审任务配置
 requirement_review:

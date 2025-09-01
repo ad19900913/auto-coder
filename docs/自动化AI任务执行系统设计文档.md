@@ -129,6 +129,40 @@ auto-coder/
 
 ### 2.2 配置文件结构
 
+#### 调度配置格式说明
+
+系统支持两种调度配置格式：
+
+**1. 标准crontab表达式格式（推荐）**
+```yaml
+schedule:
+  type: "cron"
+  cron_expressions:
+    - "0 9 * * 1-5"      # 周一到周五上午9点
+    - "0 18 * * 1-5"     # 周一到周五下午6点
+```
+
+**2. 分解的cron字段格式（向后兼容）**
+```yaml
+schedule:
+  type: "cron"
+  cron:
+    minute: "0"
+    hour: "9"
+    day: "*"
+    month: "*"
+    day_of_week: "1-5"
+```
+
+**crontab表达式格式说明：**
+- 格式：`分钟 小时 日期 月份 星期`
+- 字段：`0-59 0-23 1-31 1-12 0-7`（0和7都表示周日）
+- 特殊字符：
+  - `*`：表示任意值
+  - `*/n`：表示每隔n个单位
+  - `1-5`：表示范围（1到5）
+  - `1,3,5`：表示指定值
+
 #### 全局配置文件 (global_config.yaml)
 ```yaml
 # AI服务配置
@@ -394,9 +428,10 @@ enabled: true
 
 # 调度配置
 schedule:
+  type: "cron"
   cron_expressions:
-    - "0 9 * * *"      # 每天9点执行
-    - "0 18 * * *"     # 每天18点执行
+    - "0 9 * * 1-5"      # 周一到周五上午9点执行
+    - "0 18 * * 1-5"     # 周一到周五下午6点执行
 
 # 项目配置
 project:
@@ -437,8 +472,10 @@ enabled: true
 
 # 调度配置
 schedule:
+  type: "cron"
   cron_expressions:
     - "0 10 * * 1"     # 每周一10点执行
+    - "0 14 * * 3"     # 每周三下午2点执行
 
 # 需求文档配置
 requirement:
@@ -483,8 +520,10 @@ enabled: true
 
 # 调度配置
 schedule:
+  type: "cron"
   cron_expressions:
     - "0 20 * * 5"     # 每周五20点执行
+    - "0 9 * * 1"      # 每周一上午9点执行
 
 # 任务目标配置
 task_objective:

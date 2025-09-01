@@ -9,12 +9,9 @@ priority: 3
 # 调度配置
 schedule:
   type: "cron"
-  cron:
-    minute: "0"
-    hour: "14"
-    day: "*"
-    month: "*"
-    day_of_week: "1-5"  # 周一到周五下午2点
+  cron_expressions:
+    - "0 14 * * 1-5"      # 周一到周五下午2点
+    - "0 16 * * 1-5"      # 周一到周五下午4点
 
 # 文档生成任务配置
 doc:

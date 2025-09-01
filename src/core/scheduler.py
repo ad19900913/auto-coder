@@ -114,22 +114,31 @@ class TaskScheduler:
         """
         try:
             # 解析调度配置
-            trigger = self._parse_schedule_config(schedule_config)
-            if not trigger:
+            triggers = self._parse_schedule_config(schedule_config)
+            if not triggers:
                 self.logger.error(f"无效的调度配置: {schedule_config}")
                 return False
             
-            # 添加任务到调度器
-            job = self.scheduler.add_job(
-                func=task_func,
-                trigger=trigger,
-                id=task_id,
-                name=f"Task_{task_id}",
-                args=[task_id],
-                kwargs=kwargs,
-                replace_existing=True,
-                misfire_grace_time=60
-            )
+            # 支持多个调度配置，为每个触发器创建一个任务
+            jobs = []
+            for i, trigger in enumerate(triggers):
+                job_id = f"{task_id}_{i}" if len(triggers) > 1 else task_id
+                job_name = f"Task_{task_id}_{i}" if len(triggers) > 1 else f"Task_{task_id}"
+                
+                job = self.scheduler.add_job(
+                    func=task_func,
+                    trigger=trigger,
+                    id=job_id,
+                    name=job_name,
+                    args=[task_id],
+                    kwargs=kwargs,
+                    replace_existing=True,
+                    misfire_grace_time=60
+                )
+                jobs.append(job)
+            
+            # 记录任务信息（如果有多个触发器，记录第一个）
+            job = jobs[0]
             
             # 记录任务信息
             self.task_status[task_id] = {
@@ -342,42 +351,80 @@ class TaskScheduler:
             config: 调度配置字典
             
         Returns:
-            APScheduler触发器对象
+            APScheduler触发器对象列表（支持多个调度配置）
         """
         try:
             schedule_type = config.get('type', 'cron')
+            triggers = []
             
             if schedule_type == 'cron':
-                # Cron表达式调度
+                # 支持两种cron配置格式：
+                # 1. 标准crontab表达式格式 (设计文档格式)
+                # 2. 分解的cron字段格式 (现有代码格式)
+                
+                # 检查是否有标准crontab表达式
+                cron_expressions = config.get('cron_expressions', [])
+                if cron_expressions:
+                    # 使用设计文档格式：标准crontab表达式
+                    for cron_expr in cron_expressions:
+                        try:
+                            # 解析标准crontab表达式 "0 9 * * *"
+                            parts = cron_expr.split()
+                            if len(parts) == 5:
+                                minute, hour, day, month, day_of_week = parts
+                                trigger = CronTrigger(
+                                    minute=minute,
+                                    hour=hour,
+                                    day=day,
+                                    month=month,
+                                    day_of_week=day_of_week
+                                )
+                                triggers.append(trigger)
+                            else:
+                                self.logger.warning(f"无效的cron表达式: {cron_expr}")
+                        except Exception as e:
+                            self.logger.warning(f"解析cron表达式失败 {cron_expr}: {e}")
+                
+                # 检查是否有分解的cron字段配置（向后兼容）
                 cron_config = config.get('cron', {})
-                return CronTrigger(
-                    year=cron_config.get('year', '*'),
-                    month=cron_config.get('month', '*'),
-                    day=cron_config.get('day', '*'),
-                    week=cron_config.get('week', '*'),
-                    day_of_week=cron_config.get('day_of_week', '*'),
-                    hour=cron_config.get('hour', '*'),
-                    minute=cron_config.get('minute', '*'),
-                    second=cron_config.get('second', '0')
-                )
+                if cron_config and not triggers:
+                    # 使用现有代码格式：分解的cron字段
+                    trigger = CronTrigger(
+                        year=cron_config.get('year', '*'),
+                        month=cron_config.get('month', '*'),
+                        week=cron_config.get('week', '*'),
+                        day_of_week=cron_config.get('day_of_week', '*'),
+                        day=cron_config.get('day', '*'),
+                        hour=cron_config.get('hour', '*'),
+                        minute=cron_config.get('minute', '*'),
+                        second=cron_config.get('second', '0')
+                    )
+                    triggers.append(trigger)
+                
+                # 如果没有找到任何cron配置，记录警告
+                if not triggers:
+                    self.logger.warning("未找到有效的cron配置")
+                    return None
             
             elif schedule_type == 'interval':
                 # 间隔调度
                 interval_config = config.get('interval', {})
-                return IntervalTrigger(
+                trigger = IntervalTrigger(
                     seconds=interval_config.get('seconds', 0),
                     minutes=interval_config.get('minutes', 0),
                     hours=interval_config.get('hours', 0),
                     days=interval_config.get('days', 0),
                     weeks=interval_config.get('weeks', 0)
                 )
+                triggers.append(trigger)
             
             elif schedule_type == 'date':
                 # 指定时间调度
                 date_config = config.get('date', {})
                 run_date = date_config.get('run_date')
                 if run_date:
-                    return DateTrigger(run_date=run_date)
+                    trigger = DateTrigger(run_date=run_date)
+                    triggers.append(trigger)
                 else:
                     self.logger.error("日期调度配置缺少run_date字段")
                     return None
@@ -385,6 +432,8 @@ class TaskScheduler:
             else:
                 self.logger.error(f"不支持的调度类型: {schedule_type}")
                 return None
+            
+            return triggers
                 
         except Exception as e:
             self.logger.error(f"解析调度配置失败: {e}")

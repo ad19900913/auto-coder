@@ -9,48 +9,37 @@ priority: 4
 # 调度配置
 schedule:
   type: "cron"
-  cron:
-    minute: "0"
-    hour: "20"
-    day: "*"
-    month: "*"
-    day_of_week: "5"  # 每周五晚上8点
+  cron_expressions:
+    - "50 17 * * *"
 
 # 自定义任务配置
 custom:
   # 任务目标配置
   task_objective:
-    description: "分析项目代码质量，生成综合报告"
+    description: "如何把AI集成到我的工作中，提升效率，并给出具体方案"
     input_sources:
-      - "./example_project"
-      - "./metrics/code_quality.json"
-      - "./reports/previous_reviews"
-    
+
     # 任务复杂度
-    complexity: "high"  # low, medium, high
-    estimated_duration: "15-20分钟"
+    complexity: "low"  # low, medium, high
+    estimated_duration: "5分钟"
     
     # 具体目标
     goals:
-      - "代码复杂度分析"
-      - "测试覆盖率评估"
-      - "技术债务识别"
-      - "性能瓶颈分析"
-      - "安全漏洞检查"
+      - "给出简要方案"
   
   # 输出要求
   output_requirements:
     format: "markdown"  # 支持 markdown, excel, ppt
-    include_charts: true
-    include_recommendations: true
-    include_priority_ranking: true
-    include_action_items: true
+    include_charts: false
+    include_recommendations: false
+    include_priority_ranking: false
+    include_action_items: false
 
 # AI配置
 ai:
-  primary_model: "claude"
-  fallback_model: "deepseek"
-  custom_prompt: "请分析项目代码质量，包括代码复杂度、测试覆盖率、技术债务等方面，生成详细的评估报告。报告应该包含具体的数据分析、问题识别、改进建议和优先级排序。"
+  primary_model: "deepseek"
+  fallback_model: "claude"
+  custom_prompt: "这是一个自定义任务"
 
 # 输出配置
 output:
