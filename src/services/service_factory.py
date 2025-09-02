@@ -39,10 +39,10 @@ class ServiceFactory:
             AI服务实例
         """
         if not provider:
-            provider = self.config_manager.get_system_config().get('ai_services', {}).get('default', 'claude')
+            provider = self.config_manager.global_config.get('ai_services', {}).get('default', 'claude')
         
         if not config:
-            config = self.config_manager.get_system_config().get('ai_services', {}).get(provider, {})
+            config = self.config_manager.global_config.get('ai_services', {}).get(provider, {})
         
         # 检查缓存
         cache_key = f"{provider}_{hash(str(config))}"
@@ -83,10 +83,10 @@ class ServiceFactory:
             Git服务实例
         """
         if not platform:
-            platform = self.config_manager.get_system_config().get('git', {}).get('default', 'github')
+            platform = self.config_manager.global_config.get('git', {}).get('default', 'github')
         
         if not config:
-            config = self.config_manager.get_system_config().get('git', {}).get(platform, {})
+            config = self.config_manager.global_config.get('git', {}).get(platform, {})
         
         # 检查缓存
         cache_key = f"{platform}_{hash(str(config))}"

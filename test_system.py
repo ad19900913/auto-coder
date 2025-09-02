@@ -19,7 +19,7 @@ def setup_logging():
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         handlers=[
             logging.StreamHandler(sys.stdout),
-            logging.FileHandler('test.log', encoding='utf-8')
+            logging.FileHandler('./logs/test.log', encoding='utf-8')
         ]
     )
 

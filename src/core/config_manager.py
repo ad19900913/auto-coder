@@ -10,6 +10,14 @@ from typing import Dict, Any, Optional, List
 from datetime import datetime
 from .config_validator import ConfigValidator
 
+# 尝试导入dotenv，如果失败则忽略
+try:
+    from dotenv import load_dotenv
+    DOTENV_AVAILABLE = True
+except ImportError:
+    DOTENV_AVAILABLE = False
+    load_dotenv = None
+
 
 class ConfigManager:
     """配置管理器，管理全局和任务级配置"""
@@ -30,6 +38,9 @@ class ConfigManager:
         # 创建配置验证器
         self.validator = ConfigValidator()
         
+        # 加载.env文件
+        self._load_env_file()
+        
         # 加载配置
         self._load_configs()
     
@@ -49,6 +60,42 @@ class ConfigManager:
         except Exception as e:
             self.logger.error(f"配置加载失败: {e}")
             raise
+    
+    def _load_env_file(self):
+        """加载.env文件"""
+        if not DOTENV_AVAILABLE:
+            self.logger.warning("python-dotenv未安装，跳过.env文件加载")
+            return
+        
+        # 查找.env文件
+        env_files = [".env", ".env.local", ".env.development"]
+        env_file = None
+        
+        for file_name in env_files:
+            file_path = Path(file_name)
+            if file_path.exists():
+                env_file = file_path
+                break
+        
+        if env_file:
+            try:
+                load_dotenv(env_file)
+                self.logger.info(f"成功加载环境变量文件: {env_file}")
+                
+                # 显示加载的环境变量（不显示敏感信息）
+                env_vars = []
+                for key, value in os.environ.items():
+                    if any(keyword in key.lower() for keyword in ['api_key', 'token', 'password', 'secret']):
+                        env_vars.append(f"{key}=***")
+                    else:
+                        env_vars.append(f"{key}={value}")
+                
+                self.logger.debug(f"当前环境变量: {env_vars}")
+                
+            except Exception as e:
+                self.logger.error(f"加载.env文件失败: {e}")
+        else:
+            self.logger.info("未找到.env文件，使用系统环境变量")
     
     def _load_global_config(self):
         """加载全局配置文件"""

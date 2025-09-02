@@ -21,6 +21,9 @@ from src.services import NotifyService
 
 def setup_logging(verbose: bool = False):
     """设置日志配置"""
+    # 确保logs目录存在
+    Path("logs").mkdir(exist_ok=True)
+    
     level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(
         level=level,
@@ -62,7 +65,7 @@ def status(ctx):
         # 初始化组件
         config_manager = ConfigManager(ctx.obj['config_dir'])
         state_manager = StateManager()
-        state_file_manager = StateFileManager()
+        state_file_manager = StateFileManager(config_manager)
         notify_service = NotifyService(config_manager)
         task_manager = TaskManager(
             config_manager=config_manager,
@@ -348,7 +351,7 @@ def start_system(ctx):
         # 初始化组件
         config_manager = ConfigManager(ctx.obj['config_dir'])
         state_manager = StateManager()
-        state_file_manager = StateFileManager()
+        state_file_manager = StateFileManager(config_manager)
         notify_service = NotifyService(config_manager)
         task_manager = TaskManager(
             config_manager=config_manager,
@@ -378,7 +381,7 @@ def stop_system(ctx):
         # 初始化组件
         config_manager = ConfigManager(ctx.obj['config_dir'])
         state_manager = StateManager()
-        state_file_manager = StateFileManager()
+        state_file_manager = StateFileManager(config_manager)
         notify_service = NotifyService(config_manager)
         task_manager = TaskManager(
             config_manager=config_manager,
@@ -409,7 +412,8 @@ def cleanup(ctx):
         click.echo("🧹 清理系统...")
         
         # 初始化组件
-        state_file_manager = StateFileManager()
+        config_manager = ConfigManager(ctx.obj['config_dir'])
+        state_file_manager = StateFileManager(config_manager)
         
         # 清理过期状态文件
         cleaned_count = state_file_manager.cleanup_expired_states()
@@ -423,6 +427,37 @@ def cleanup(ctx):
         
     except Exception as e:
         click.echo(f"❌ 清理系统失败: {e}", err=True)
+        sys.exit(1)
+
+
+@cli.command()
+@click.pass_context
+def config_summary(ctx):
+    """显示系统配置摘要"""
+    try:
+        click.echo("📋 获取系统配置摘要...")
+        
+        # 初始化配置管理器
+        config_manager = ConfigManager(ctx.obj['config_dir'])
+        
+        # 获取配置摘要
+        summary = config_manager.get_config_summary()
+        
+        click.echo("\n" + "="*60)
+        click.echo("📋 系统配置摘要")
+        click.echo("="*60)
+        
+        click.echo(f"📁 配置目录: {summary.get('config_dir', 'N/A')}")
+        click.echo(f"✅ 全局配置加载: {'是' if summary.get('global_config_loaded') else '否'}")
+        click.echo(f"📝 编码规范数量: {summary.get('coding_standards_count', 0)}")
+        click.echo(f"📋 任务配置数量: {summary.get('task_configs_count', 0)}")
+        click.echo(f"🤖 AI服务: {', '.join(summary.get('ai_services', []))}")
+        click.echo(f"🕒 最后更新: {summary.get('last_updated', 'N/A')}")
+        
+        click.echo("\n" + "="*60)
+        
+    except Exception as e:
+        click.echo(f"❌ 获取配置摘要失败: {e}", err=True)
         sys.exit(1)
 
 
