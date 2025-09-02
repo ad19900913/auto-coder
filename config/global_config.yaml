@@ -9,7 +9,7 @@ max_concurrent_tasks: 5
 
 # AI服务配置
 ai_services:
-  default: "claude"  # 默认AI服务
+  default: "${DEFAULT_AI_SERVICE}"  # 默认AI服务
   claude:
     api_key: "${CLAUDE_API_KEY}"
     base_url: "https://api.anthropic.com"
@@ -41,7 +41,7 @@ ai_services:
   deepseek:
     api_key: "${DEEPSEEK_API_KEY}"
     base_url: "https://api.deepseek.com"
-    model: "deepseek-coder"
+    model: "deepseek-reasoner"
     max_tokens: 4000
     temperature: 0.1
     
@@ -67,7 +67,7 @@ ai_services:
 
 # Git配置
 git:
-  default: "github"  # 默认Git平台
+  default: "${DEFAULT_GIT_SERVICE}"  # 默认Git平台
   github:
     token: "${GITHUB_TOKEN}"
     username: "${GITHUB_USERNAME}"

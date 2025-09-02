@@ -4,283 +4,70 @@ version: "1.0"
 last_updated: "2025-01-20"
 language: "all"
 framework: "cross-platform"
+alwaysApply: true
 ---
+# AI Developer Profile  
+
+ai_persona:  
+  role: Senior Java Developer  
+  principles:  
+    - SOLID  
+    - DRY  
+    - KISS  
+    - YAGNI  
+    - OWASP  
+    - DOP  
+    - FP  
+    - DDD
+# Technical Stack
+tech_stacks
+  framework: Spring Boot
+  build_tool: Maven
+  java_version: 8
+  dependencies:
+    - Commons Lang3
+    - JUnit5
+  language: Chinese 
+  code_comments: Chinese
 
 ## 🚨 编码红线 - 绝对禁止
 
-### 安全红线
+### 云平台开发红线
 
-#### 1. 绝对禁止硬编码敏感信息
-```python
-# ❌ 绝对禁止
-password = "admin123"
-api_key = "sk-1234567890abcdef"
-database_url = "mysql://user:pass@localhost/db"
+1.【红线】文件上传需要限定上传文件大小、数量，文件类型根据实际情况定:
+2.【红线】禁止直接使用不可信数据来拼接 SQL语句: 1)【红线】禁止在所有的外部输入使 用，例如: 接口、用户输入;
+3.【红线】禁止硬编码秘钥、密码、用户口令，详细参照《Java 语言安全编程规范》规则 3.1;
+4.【红线】禁止非安全的 Htttp 请求中传输明文秘钥、密码、口令信息，应使用安全的 Htttps方式详细 参照《Java 语言安全编程规范》规则 3.4;
+5.【红线】禁止使用可能泄露秘钥、加密信息的前端加密算法详细参照《Java 语言安全编程规范》规则 3.5;
+6.【红线】禁止代码中存在明文秘钥、密码、口令，详细参照《Java 语言安全编程规范》规 则3.7:
+7.【红线】禁止弱密码、弱口令，详细参照《Java 语言安全编程规范》规则 3.8;
+8.【红线】禁止使用私有或者弱加密算法，详细参照《Java 语言安全编程规范》规则 4.1;
+9.【红线】禁止在日志中打印明文的一级敏感信息如秘钥、密码、token 信息，详细参照《Java语言安全 编程规范》规则 5.5;
+10.【红线】管理型操作类型的非 Get请求需记录操作日志，详细参照《Java 语言安全编程规范》规则5.6
+11.【红线】禁止安装非必要测试服务，详细参照《JAVA语言安全编程规范》规则 9.10:
+12.【红线】禁止开启非必要的端口，详细参照《安全编程规范》规则 9.11;
+13.【红线】禁止开启全局监听端口，详细参照《Java 语言全编程规范》规则 9.12;
+14.【红线】禁止不关闭资源，例如文件、网络、对象:
+15.【红线】禁止私自引入第三方组件，使用三方库必须通过系统组评审:
+16.【红线】接口返回前端的超大 Long 类型，诸如雪花 ID等，必须使用 String 类型返回，否则会 出 现精度丢失;
+17.【红线】代码和注释中都要避免使用任何语言的种族歧视性词语;
+18.【红线】生产环境，禁止默认开启  debug 日志;如遇线上问题排査，可以临时开启，但必须及时关闭:
+19.【红线】禁止出现接口文档与实现不一致，如有变动，需先修改接口文档并评审通过后，再修改实现， 接口文档必须有修订记录;
 
-# ✅ 正确做法
-password = os.getenv("DB_PASSWORD")
-api_key = os.getenv("OPENAI_API_KEY")
-database_url = os.getenv("DATABASE_URL")
-```
+### JAVA编码红线
 
-#### 2. 绝对禁止SQL注入
-```python
-# ❌ 绝对禁止
-query = f"SELECT * FROM users WHERE id = {user_id}"
-
-# ✅ 正确做法
-query = "SELECT * FROM users WHERE id = %s"
-cursor.execute(query, (user_id,))
-```
-
-#### 3. 绝对禁止XSS攻击
-```javascript
-// ❌ 绝对禁止
-element.innerHTML = userInput;
-
-// ✅ 正确做法
-element.textContent = userInput;
-// 或者使用安全的HTML净化库
-```
-
-#### 4. 绝对禁止命令注入
-```python
-# ❌ 绝对禁止
-os.system(f"rm -rf {user_input}")
-
-# ✅ 正确做法
-# 使用安全的文件操作API
-import shutil
-shutil.rmtree(safe_path)
-```
-
-### 性能红线
-
-#### 5. 绝对禁止N+1查询问题
-```python
-# ❌ 绝对禁止
-for user in users:
-    posts = Post.objects.filter(user=user)  # 每次循环都查询数据库
-
-# ✅ 正确做法
-users = User.objects.prefetch_related('posts').all()
-for user in users:
-    posts = user.posts.all()  # 使用预加载的数据
-```
-
-#### 6. 绝对禁止无限循环
-```python
-# ❌ 绝对禁止
-while True:
-    process_data()
-
-# ✅ 正确做法
-max_iterations = 1000
-iteration = 0
-while iteration < max_iterations:
-    process_data()
-    iteration += 1
-```
-
-#### 7. 绝对禁止内存泄漏
-```python
-# ❌ 绝对禁止
-class DataProcessor:
-    def __init__(self):
-        self.data = []
-    
-    def add_data(self, item):
-        self.data.append(item)  # 无限增长，从不清理
-
-# ✅ 正确做法
-class DataProcessor:
-    def __init__(self, max_size=1000):
-        self.data = []
-        self.max_size = max_size
-    
-    def add_data(self, item):
-        if len(self.data) >= self.max_size:
-            self.data.pop(0)  # 保持固定大小
-        self.data.append(item)
-```
-
-### 代码质量红线
-
-#### 8. 绝对禁止魔法数字
-```python
-# ❌ 绝对禁止
-if user.age > 18:
-    allow_access = True
-
-# ✅ 正确做法
-MINIMUM_AGE = 18
-if user.age > MINIMUM_AGE:
-    allow_access = True
-```
-
-#### 9. 绝对禁止深层嵌套
-```python
-# ❌ 绝对禁止（超过3层嵌套）
-if condition1:
-    if condition2:
-        if condition3:
-            if condition4:
-                if condition5:
-                    do_something()
-
-# ✅ 正确做法
-def should_do_something(condition1, condition2, condition3, condition4, condition5):
-    return all([condition1, condition2, condition3, condition4, condition5])
-
-if should_do_something(condition1, condition2, condition3, condition4, condition5):
-    do_something()
-```
-
-#### 10. 绝对禁止空异常处理
-```python
-# ❌ 绝对禁止
-try:
-    risky_operation()
-except Exception:
-    pass  # 静默忽略所有异常
-
-# ✅ 正确做法
-try:
-    risky_operation()
-except SpecificException as e:
-    logger.error(f"操作失败: {e}")
-    # 处理特定异常
-except Exception as e:
-    logger.error(f"未知错误: {e}")
-    # 记录并上报未知异常
-```
-
-### 并发安全红线
-
-#### 11. 绝对禁止竞态条件
-```python
-# ❌ 绝对禁止
-class Counter:
-    def __init__(self):
-        self.value = 0
-    
-    def increment(self):
-        self.value += 1  # 非原子操作
-
-# ✅ 正确做法
-import threading
-
-class Counter:
-    def __init__(self):
-        self.value = 0
-        self.lock = threading.Lock()
-    
-    def increment(self):
-        with self.lock:
-            self.value += 1
-```
-
-#### 12. 绝对禁止死锁
-```python
-# ❌ 绝对禁止
-def transfer_money(account1, account2, amount):
-    with account1.lock:
-        with account2.lock:  # 可能导致死锁
-            # 转账逻辑
-
-# ✅ 正确做法
-def transfer_money(account1, account2, amount):
-    # 按固定顺序获取锁，避免死锁
-    first, second = sorted([account1, account2], key=lambda x: x.id)
-    with first.lock:
-        with second.lock:
-            # 转账逻辑
-```
-
-### 错误处理红线
-
-#### 13. 绝对禁止吞掉异常
-```python
-# ❌ 绝对禁止
-def process_data():
-    try:
-        return complex_operation()
-    except Exception:
-        return None  # 吞掉异常，返回None
-
-# ✅ 正确做法
-def process_data():
-    try:
-        return complex_operation()
-    except Exception as e:
-        logger.error(f"数据处理失败: {e}")
-        raise  # 重新抛出异常，让调用者知道失败
-```
-
-#### 14. 绝对禁止忽略返回值
-```python
-# ❌ 绝对禁止
-def create_user():
-    user = User.objects.create(name="John")
-    # 忽略创建结果，不知道是否成功
-
-# ✅ 正确做法
-def create_user():
-    try:
-        user = User.objects.create(name="John")
-        logger.info(f"用户创建成功: {user.id}")
-        return user
-    except Exception as e:
-        logger.error(f"用户创建失败: {e}")
-        raise
-```
-
-### 日志记录红线
-
-#### 15. 绝对禁止记录敏感信息
-```python
-# ❌ 绝对禁止
-logger.info(f"用户登录成功: {user.password}")
-
-# ✅ 正确做法
-logger.info(f"用户登录成功: {user.username}")
-```
-
-#### 16. 绝对禁止使用print调试
-```python
-# ❌ 绝对禁止
-def process_order(order):
-    print(f"处理订单: {order.id}")  # 生产环境不应该有print
-    # 处理逻辑
-
-# ✅ 正确做法
-def process_order(order):
-    logger.info(f"处理订单: {order.id}")
-    # 处理逻辑
-```
-
-### 配置管理红线
-
-#### 17. 绝对禁止硬编码配置
-```python
-# ❌ 绝对禁止
-DATABASE_URL = "mysql://localhost:3306/production_db"
-
-# ✅ 正确做法
-DATABASE_URL = os.getenv("DATABASE_URL", "mysql://localhost:3306/dev_db")
-```
-
-#### 18. 绝对禁止环境相关配置
-```python
-# ❌ 绝对禁止
-if os.path.exists("/etc/production"):
-    DEBUG = False
-else:
-    DEBUG = True
-
-# ✅ 正确做法
-DEBUG = os.getenv("DEBUG", "false").lower() == "true"
-```
+1.【红线】IDE 的 text file encoding 设置为 UTF-8;IDE 中文件的换行符使用 Unix 格式，不要使用  Windows 格式;
+2.【红线】定义数据对象 D0 类时，属性类型必须和数据库字段类型相匹配:
+3.【红线】时间戳字段类型定义，必须是 Long 类型，避免溢出;
+4.【红线】在使用 java.util.stream. Collectors 类的 toMap()方法转为 Map 集合时,一定要使 用含有参数类型为 BinaryOperator，参数名为 mergeFunction 的方法，否则当出现相同 key 值时会抛
+出IllegalStateException 异常:
+5.【红线】在使用 java.uti1.stream. Collectors 类的 toMap()方法转为 Map 集合时,一定要注 意当 value 为nu11 时会抛 NPE 异常;
+6.【红线】线程资源必须通过线程池提供，不允许在应用中自行显式创建线程:
+7.【红线】ThreadLoca1 变量，必须显式回收，否则会影响业务逻辑和出现内存泄漏:
+8.【红线】Thread#run 方法死循环逻辑中，catch 捕获异常必须是 throwAble，不能仅捕获InterruptedException，避免其他异常导致工作线程退出:
+9.【红线】禁止用 Beanuti1s 进行属性的 copy，性能差，并且问题难以排査，推荐使用 get/set 方法;
+10.【红线】生产环境禁止直接使用 System.out 或 System.err 输出日志或使用 e.printStackTrace()打印异常堆栈:
+11.【红线】单元测试代码必须写在如下工程目录:src/test/，不允许写在业务代码目录下，禁止测试代码上生产;
 
 ## 🔍 红线检查清单
 
