@@ -91,6 +91,21 @@ pip install -r requirements.txt
 pip install PyYAML click APScheduler requests GitPython python-dotenv argcomplete
 ```
 
+### 🔧 Tab补全设置（可选）
+
+为了提升使用体验，可以设置Tab补全功能：
+
+```bash
+# 运行补全设置脚本
+bash autocomplete_setup.sh
+
+# 重新加载配置
+source ~/.bashrc
+```
+
+设置后可以使用以下别名和补全：
+- `system-manager [TAB]` - 系统管理命令补全
+
 ### 🧪 系统自测
 
 系统提供了专门的自测工具 `system_manager.py`，用于验证系统功能和调度机制：
@@ -240,42 +255,16 @@ notifications:
 ### 系统管理命令（推荐）
 
 ```bash
-# 启动系统（推荐用于自测）
-python system_manager.py run
+# 使用完整路径
+python system_manager.py daemon    # 后台启动系统
+python system_manager.py status    # 查看系统状态
+python system_manager.py stop      # 停止系统
 
-# 检查系统状态
-python system_manager.py status
-
-# 停止系统
-python system_manager.py stop
-
-# 查看帮助
-python system_manager.py --help
-```
-
-### CLI管理命令（辅助工具）
-
-```bash
-# 查看系统状态
-python src/cli/main.py status
-
-# 列出所有任务
-python src/cli/main.py list-tasks
-
-# 查看任务详情
-python src/cli/main.py task-status <task_id>
-
-# 手动执行任务
-python src/cli/main.py execute-task <task_id>
-
-# 启动系统
-python src/cli/main.py start-system
-
-# 停止系统
-python src/cli/main.py stop-system
-
-# 清理系统
-python src/cli/main.py cleanup
+# 使用别名（需要先运行 autocomplete_setup.sh）
+system-manager daemon              # 后台启动系统
+system-manager status              # 查看系统状态
+system-manager stop                # 停止系统
+system-manager --help              # 查看帮助
 ```
 
 ### 任务配置示例
@@ -367,19 +356,19 @@ review:
 
 2. **检查配置文件**:
    ```bash
-   python src/cli/main.py config-summary
+   python system_manager.py status
    ```
 
 3. **验证任务配置**:
    ```bash
-   python src/cli/main.py validate-task <task_id>
+   python system_manager.py status
    ```
 
 ## 📚 文档
 
-- [项目结构总结](docs/项目结构总结.md)
-- [Tab补全设置指南](docs/Tab补全设置指南.md)
-- [邮件推送配置指南](docs/邮件推送配置指南.md)
+- [使用示例](docs/使用示例.md) - 详细的使用示例和命令速查
+- [Tab补全设置指南](docs/Tab补全设置指南.md) - Tab补全功能设置指南
+- [邮件推送配置指南](docs/邮件推送配置指南.md) - 邮件通知配置指南
 
 ## 🤝 贡献
 

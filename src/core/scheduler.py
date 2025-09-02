@@ -443,13 +443,13 @@ class TaskScheduler:
         """任务执行事件监听器"""
         try:
             if event.code == EVENT_JOB_EXECUTED:
-                # 任务执行成功
+                # 任务被调度执行（不表示成功）
                 task_id = event.job_id
-                self.logger.info(f"任务执行成功: {task_id}")
+                self.logger.debug(f"任务被调度执行: {task_id}")
                 
-                # 更新任务状态
+                # 更新任务状态为运行中
                 if task_id in self.task_status:
-                    self.task_status[task_id]['status'] = 'completed'
+                    self.task_status[task_id]['status'] = 'running'
                     self.task_status[task_id]['last_run_time'] = datetime.now().isoformat()
                     self.task_status[task_id]['next_run_time'] = event.scheduled_run_time.isoformat()
                 

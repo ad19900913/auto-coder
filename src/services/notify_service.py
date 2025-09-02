@@ -104,13 +104,23 @@ class NotifyService:
             notification_level = self._get_notification_level(event_type)
             
             # 发送到各个渠道
+            success_count = 0
+            total_count = 0
             for channel_name, channel in self.channels.items():
                 if self._should_notify(channel_name, notification_level):
+                    total_count += 1
                     try:
                         channel.send(message, notification_level, variables)
                         self.logger.info(f"通知发送成功: {channel_name} -> {event_type}")
+                        success_count += 1
                     except Exception as e:
                         self.logger.error(f"通知发送失败 {channel_name}: {e}")
+            
+            # 只有在所有渠道都成功时才记录总体成功
+            if total_count > 0 and success_count == total_count:
+                self.logger.info(f"通知发送成功: {event_type}")
+            elif total_count > 0:
+                self.logger.error(f"通知发送失败: {event_type} (成功: {success_count}/{total_count})")
             
         except Exception as e:
             self.logger.error(f"通知任务事件失败: {e}")

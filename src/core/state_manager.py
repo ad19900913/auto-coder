@@ -154,7 +154,7 @@ class StateManager:
             with open(state_file_path, 'w', encoding='utf-8') as f:
                 json.dump(state_data, f, ensure_ascii=False, indent=2)
             
-            self.logger.info(f"状态更新成功: {task_id} -> {updates.get('status', 'unknown')}")
+            self.logger.info(f"状态更新成功: {task_id} -> {updates.get('status', '其他字段')}")
             return True
             
         except Exception as e:

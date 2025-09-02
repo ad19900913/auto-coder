@@ -41,9 +41,15 @@ class CodingTaskExecutor(TaskExecutor):
             # 更新进度
             self._update_progress(20, "验证项目路径")
             
-            # 验证项目路径
-            if not os.path.exists(project_path):
-                raise FileNotFoundError(f"项目路径不存在: {project_path}")
+            # 验证项目路径并创建目录
+            project_path_obj = Path(project_path)
+            if not project_path_obj.exists():
+                self.logger.info(f"项目路径不存在，正在创建目录: {project_path}")
+                project_path_obj.mkdir(parents=True, exist_ok=True)
+                self.logger.info(f"项目目录创建成功: {project_path}")
+            
+            # 确保项目路径是绝对路径
+            project_path = str(project_path_obj.absolute())
             
             # 更新进度
             self._update_progress(30, "创建Git分支")
