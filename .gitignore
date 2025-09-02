@@ -353,3 +353,6 @@ logs/
 *.bin
 *.exe
 *.dmg
+
+# 临时文件
+system_status.json
