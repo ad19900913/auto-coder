@@ -39,10 +39,10 @@ class NotifyService:
             self.channels['dingtalk'] = DingTalkNotifier(dingtalk_config)
             self.logger.info("钉钉通知渠道初始化成功")
         
-        # 邮件通知（预留）
+        # 邮件通知
         email_config = self.config_manager.get_notification_config().get('email', {})
         if email_config.get('smtp_server'):
-            # self.channels['email'] = EmailNotifier(email_config)
+            self.channels['email'] = EmailNotifier(email_config)
             self.logger.info("邮件通知渠道初始化成功")
         
         # Webhook通知（预留）
@@ -363,15 +363,149 @@ class DingTalkNotifier:
 
 
 class EmailNotifier:
-    """邮件通知器（预留）"""
+    """邮件通知器"""
     
     def __init__(self, config: Dict[str, Any]):
-        self.config = config
+        """
+        初始化邮件通知器
+        
+        Args:
+            config: 邮件配置
+        """
+        self.smtp_server = config.get('smtp_server', '')
+        self.smtp_port = config.get('smtp_port', 587)
+        self.username = config.get('username', '')
+        self.password = config.get('password', '')
+        self.from_email = config.get('from_email', self.username)
+        self.to_emails = config.get('to_emails', [])
+        self.use_tls = config.get('use_tls', True)
+        self.use_ssl = config.get('use_ssl', False)
         self.logger = logging.getLogger(__name__)
     
     def send(self, message: str, level: str, variables: Dict[str, Any]):
-        """发送邮件通知（预留实现）"""
-        self.logger.info("邮件通知功能暂未实现")
+        """
+        发送邮件通知
+        
+        Args:
+            message: 消息内容
+            level: 通知级别
+            variables: 模板变量
+        """
+        try:
+            import smtplib
+            from email.mime.text import MIMEText
+            from email.mime.multipart import MIMEMultipart
+            from email.utils import formataddr
+            
+            # 构建邮件内容
+            email_subject, email_body = self._build_email_content(message, level, variables)
+            
+            # 创建邮件对象
+            msg = MIMEMultipart('alternative')
+            msg['Subject'] = email_subject
+            msg['From'] = formataddr(('Auto-Coder系统', self.from_email))
+            msg['To'] = ', '.join(self.to_emails)
+            
+            # 添加HTML内容
+            html_part = MIMEText(email_body, 'html', 'utf-8')
+            msg.attach(html_part)
+            
+            # 添加纯文本内容
+            text_part = MIMEText(self._strip_html(email_body), 'plain', 'utf-8')
+            msg.attach(text_part)
+            
+            # 连接SMTP服务器
+            if self.use_ssl:
+                server = smtplib.SMTP_SSL(self.smtp_server, self.smtp_port)
+            else:
+                server = smtplib.SMTP(self.smtp_server, self.smtp_port)
+                if self.use_tls:
+                    server.starttls()
+            
+            # 登录
+            if self.username and self.password:
+                server.login(self.username, self.password)
+            
+            # 发送邮件
+            server.send_message(msg)
+            server.quit()
+            
+            self.logger.info(f"邮件通知发送成功: {', '.join(self.to_emails)}")
+            
+        except Exception as e:
+            self.logger.error(f"邮件通知发送失败: {e}")
+            raise
+    
+    def _build_email_content(self, message: str, level: str, variables: Dict[str, Any]) -> tuple:
+        """
+        构建邮件内容
+        
+        Returns:
+            (subject, html_body)
+        """
+        # 根据级别设置主题前缀
+        level_prefixes = {
+            'info': '📢',
+            'warning': '⚠️',
+            'error': '🚨'
+        }
+        prefix = level_prefixes.get(level, '📢')
+        
+        # 构建主题
+        subject = f"{prefix} Auto-Coder系统通知"
+        
+        # 构建HTML内容
+        html_body = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                body {{ font-family: Arial, sans-serif; margin: 20px; }}
+                .header {{ background-color: #f8f9fa; padding: 15px; border-radius: 5px; }}
+                .content {{ margin: 20px 0; }}
+                .footer {{ color: #6c757d; font-size: 12px; margin-top: 30px; }}
+                .level-info {{ color: #007bff; }}
+                .level-warning {{ color: #ffc107; }}
+                .level-error {{ color: #dc3545; }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h2>🤖 Auto-Coder系统通知</h2>
+                <p>时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+            </div>
+            
+            <div class="content">
+                <h3>消息内容:</h3>
+                <p>{message}</p>
+                
+                <h3>详细信息:</h3>
+                <ul>
+                    <li><strong>通知级别:</strong> <span class="level-{level}">{level.upper()}</span></li>
+                    <li><strong>任务ID:</strong> {variables.get('task_id', 'N/A')}</li>
+                    <li><strong>任务类型:</strong> {variables.get('task_type', 'N/A')}</li>
+                    <li><strong>执行时间:</strong> {variables.get('duration', 'N/A')}</li>
+                </ul>
+            </div>
+            
+            <div class="footer">
+                <p>此邮件由Auto-Coder系统自动发送，请勿直接回复。</p>
+                <p>如有问题，请联系系统管理员。</p>
+            </div>
+        </body>
+        </html>
+        """
+        
+        return subject, html_body
+    
+    def _strip_html(self, html_content: str) -> str:
+        """去除HTML标签，获取纯文本内容"""
+        import re
+        # 简单的HTML标签去除
+        text = re.sub(r'<[^>]+>', '', html_content)
+        text = re.sub(r'\s+', ' ', text)
+        return text.strip()
 
 
 class WebhookNotifier:

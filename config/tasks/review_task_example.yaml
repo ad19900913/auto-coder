@@ -3,7 +3,7 @@ task_id: "review_task_example"
 name: "代码审查任务示例"
 description: "使用工作流引擎执行的代码审查任务示例"
 type: "review"
-enabled: true
+enabled: false
 
 # 工作流配置
 workflow_mode: "automated"  # manual 或 automated

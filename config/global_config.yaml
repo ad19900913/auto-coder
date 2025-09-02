@@ -222,18 +222,22 @@ notification_templates:
   
   channels:
     dingtalk:
-      enabled: true
+      enabled: false
       webhook_url: "${DINGTALK_WEBHOOK}"
       secret: "${DINGTALK_SECRET}"
       at_users: ["张三", "李四"]
       at_all: false
     
     email:
-      enabled: false
-      smtp_server: ""
+      enabled: true
+      smtp_server: "${EMAIL_SMTP_SERVER}"
       smtp_port: 587
-      username: ""
-      password: ""
+      username: "${EMAIL_USERNAME}"
+      password: "${EMAIL_PASSWORD}"
+      from_email: "${EMAIL_FROM_EMAIL}"
+      to_emails: ["${EMAIL_TO_EMAILS}"]
+      use_tls: true
+      use_ssl: false
     
     webhook:
       enabled: false
@@ -246,6 +250,16 @@ notification:
     webhook_url: "${DINGTALK_WEBHOOK}"
     secret: "${DINGTALK_SECRET}"
     at_users: ["张三", "李四"]
+  
+  email:
+    smtp_server: "${EMAIL_SMTP_SERVER}"
+    smtp_port: 587
+    username: "${EMAIL_USERNAME}"
+    password: "${EMAIL_PASSWORD}"
+    from_email: "${EMAIL_FROM_EMAIL}"
+    to_emails: ["${EMAIL_TO_EMAILS}"]
+    use_tls: true
+    use_ssl: false
 
 # 日志配置
 logging:

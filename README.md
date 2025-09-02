@@ -122,6 +122,13 @@ GITLAB_USERNAME=your_gitlab_username
 # 通知服务配置
 DINGTALK_WEBHOOK=your_dingtalk_webhook_url
 DINGTALK_SECRET=your_dingtalk_secret
+
+# 邮件服务配置
+EMAIL_SMTP_SERVER=smtp.gmail.com
+EMAIL_USERNAME=your-email@gmail.com
+EMAIL_PASSWORD=your-app-password
+EMAIL_FROM_EMAIL=your-email@gmail.com
+EMAIL_TO_EMAILS=admin@company.com,user1@company.com
 ```
 
 #### 2. 配置全局设置
