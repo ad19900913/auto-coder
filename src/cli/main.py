@@ -18,6 +18,13 @@ from src.core import (
 )
 from src.services import NotifyService
 
+# 尝试导入argcomplete以支持Tab补全
+try:
+    import argcomplete
+    ARGCOMPLETE_AVAILABLE = True
+except ImportError:
+    ARGCOMPLETE_AVAILABLE = False
+
 
 def setup_logging(verbose: bool = False):
     """设置日志配置"""
@@ -89,12 +96,35 @@ def status(ctx):
         click.echo(f"📝 已配置任务数量: {len(task_configs)}")
         
         if task_configs:
-            click.echo("\n📋 任务列表:")
+            # 统计启用和禁用的任务
+            enabled_tasks = []
+            disabled_tasks = []
+            
             for task_id, task_config in task_configs.items():
+                task_name = task_config.get('name', task_id)
                 task_type = task_config.get('type', 'unknown')
                 enabled = task_config.get('enabled', True)
-                status_icon = "✅" if enabled else "❌"
-                click.echo(f"  {status_icon} {task_id} ({task_type})")
+                
+                if enabled:
+                    enabled_tasks.append((task_id, task_name, task_type))
+                else:
+                    disabled_tasks.append((task_id, task_name, task_type))
+            
+            # 显示启用状态统计
+            click.echo(f"✅ 启用任务数量: {len(enabled_tasks)}")
+            click.echo(f"❌ 禁用任务数量: {len(disabled_tasks)}")
+            
+            # 显示启用的任务列表
+            if enabled_tasks:
+                click.echo("\n📋 启用任务列表:")
+                for task_id, task_name, task_type in enabled_tasks:
+                    click.echo(f"  ✅ {task_name} ({task_type})")
+            
+            # 显示禁用的任务列表
+            if disabled_tasks:
+                click.echo("\n📋 禁用任务列表:")
+                for task_id, task_name, task_type in disabled_tasks:
+                    click.echo(f"  ❌ {task_name} ({task_type})")
         
         # 任务管理器状态
         click.echo(f"\n🔄 任务管理器状态: {'运行中' if task_manager.is_running() else '已停止'}")
@@ -299,9 +329,9 @@ def stop_task(ctx, task_id):
 @cli.command()
 @click.pass_context
 def list_tasks(ctx):
-    """列出所有任务"""
+    """列出所有已配置的任务"""
     try:
-        click.echo("📋 列出所有任务...")
+        click.echo("📋 列出所有已配置的任务...")
         
         # 初始化组件
         config_manager = ConfigManager(ctx.obj['config_dir'])
@@ -313,28 +343,68 @@ def list_tasks(ctx):
             notify_service=notify_service
         )
         
-        # 获取所有任务状态
-        task_statuses = task_manager.get_all_task_statuses()
+        # 获取所有任务配置
+        task_configs = config_manager.get_all_task_configs()
         
-        if not task_statuses:
-            click.echo("📭 没有找到任何任务")
+        if not task_configs:
+            click.echo("📭 没有找到任何已配置的任务")
             return
         
         # 显示任务列表
-        click.echo("\n" + "="*80)
-        click.echo(f"{'任务ID':<20} {'类型':<15} {'状态':<12} {'进度':<8} {'运行状态':<10}")
-        click.echo("="*80)
+        click.echo("\n" + "="*90)
+        click.echo(f"{'任务名称':<30} {'任务ID':<25} {'类型':<12} {'启用状态':<12} {'运行状态':<10}")
+        click.echo("="*90)
         
-        for task_status in task_statuses:
-            task_id = task_status.get('task_id', 'N/A')
-            task_type = task_status.get('metadata', {}).get('task_type', 'unknown')
-            status = task_status.get('status', 'unknown')
-            progress = f"{task_status.get('progress', 0)}%"
-            is_running = "运行中" if task_status.get('is_running') else "未运行"
+        for task_id, task_config in task_configs.items():
+            task_name = task_config.get('name', task_id)
+            task_type = task_config.get('type', 'unknown')
+            enabled = "✅启用" if task_config.get('enabled', True) else "❌禁用"
             
-            click.echo(f"{task_id:<20} {task_type:<15} {status:<12} {progress:<8} {is_running:<10}")
+            # 获取运行状态
+            task_status = task_manager.get_task_status(task_id)
+            is_running = "运行中" if task_status and task_status.get('is_running') else "未运行"
+            
+            # 处理中文显示宽度问题
+            def get_display_width(text):
+                """计算字符串的显示宽度，中文字符算2个宽度"""
+                width = 0
+                for char in text:
+                    if ord(char) > 127:  # 中文字符
+                        width += 2
+                    else:
+                        width += 1
+                return width
+            
+            def pad_right(text, width):
+                """右填充字符串到指定宽度"""
+                display_width = get_display_width(text)
+                if display_width >= width:
+                    return text
+                return text + ' ' * (width - display_width)
+            
+            # 格式化输出
+            formatted_name = pad_right(task_name, 28)
+            formatted_id = pad_right(task_id, 23)
+            formatted_type = pad_right(task_type, 10)
+            formatted_enabled = pad_right(enabled, 10)
+            formatted_running = pad_right(is_running, 8)
+            
+            click.echo(f"{formatted_name} {formatted_id} {formatted_type} {formatted_enabled} {formatted_running}")
         
-        click.echo("="*80)
+        click.echo("="*90)
+        
+        # 显示统计信息
+        enabled_count = sum(1 for config in task_configs.values() if config.get('enabled', True))
+        disabled_count = len(task_configs) - enabled_count
+        running_count = sum(1 for config in task_configs.values() 
+                          if task_manager.get_task_status(config.get('task_id', '')) and 
+                          task_manager.get_task_status(config.get('task_id', '')).get('is_running'))
+        
+        click.echo(f"\n📊 统计信息:")
+        click.echo(f"  总任务数: {len(task_configs)}")
+        click.echo(f"  启用任务: {enabled_count}")
+        click.echo(f"  禁用任务: {disabled_count}")
+        click.echo(f"  运行中任务: {running_count}")
         
     except Exception as e:
         click.echo(f"❌ 列出任务失败: {e}", err=True)
@@ -362,7 +432,38 @@ def start_system(ctx):
         # 启动任务管理器
         task_manager.start()
         
+        # 获取任务加载状态
+        task_configs = config_manager.get_all_task_configs()
+        enabled_tasks = []
+        disabled_tasks = []
+        failed_tasks = []
+        
+        for task_id, task_config in task_configs.items():
+            if not task_config.get('enabled', True):
+                disabled_tasks.append(task_id)
+                continue
+                
+            # 验证任务配置
+            validation_errors = task_manager.executor_factory.validate_task_config(task_id, task_config)
+            if validation_errors:
+                failed_tasks.append((task_id, validation_errors))
+            else:
+                enabled_tasks.append(task_id)
+        
         click.echo("✅ 系统启动成功！")
+        
+        # 显示任务加载状态
+        if enabled_tasks:
+            click.echo(f"✅ 成功加载 {len(enabled_tasks)} 个任务: {', '.join(enabled_tasks)}")
+        
+        if disabled_tasks:
+            click.echo(f"⚠️ 跳过 {len(disabled_tasks)} 个禁用任务: {', '.join(disabled_tasks)}")
+        
+        if failed_tasks:
+            click.echo(f"❌ {len(failed_tasks)} 个任务配置验证失败:")
+            for task_id, errors in failed_tasks:
+                click.echo(f"   - {task_id}: {', '.join(errors)}")
+        
         click.echo("💡 使用 'status' 命令查看系统状态")
         click.echo("💡 使用 'list-tasks' 命令查看任务列表")
         
@@ -466,9 +567,12 @@ def config_summary(ctx):
 def version(ctx):
     """显示版本信息"""
     click.echo("🚀 自动化AI任务执行系统 v1.0.0")
-    click.echo("📅 2024年")
+    click.echo("📅 2025-09-02")
     click.echo("👥 Auto Coder Team")
 
 
 if __name__ == '__main__':
+    # 如果argcomplete可用，启用Tab补全
+    if ARGCOMPLETE_AVAILABLE:
+        argcomplete.autocomplete(cli)
     cli()

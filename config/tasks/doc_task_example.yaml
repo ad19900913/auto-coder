@@ -11,7 +11,7 @@ workflow_mode: "manual"  # manual 或 automated
 # 任务调度配置
 schedule:
   type: "cron"
-  expression: "0 10 * * 1"  # 每周一早上10点执行
+  cron_expressions: ["21 17 * * *"]  # 工作日17点21分执行
   timezone: "UTC+0"
 
 # 任务参数

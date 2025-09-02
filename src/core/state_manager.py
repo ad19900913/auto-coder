@@ -161,6 +161,36 @@ class StateManager:
             self.logger.error(f"状态更新失败 {task_id}: {e}")
             return False
     
+    def update_task_status(self, task_id: str, status: TaskStatus, 
+                          message: str = None, metadata: Dict[str, Any] = None,
+                          progress: float = None) -> bool:
+        """
+        更新任务状态（兼容性方法）
+        
+        Args:
+            task_id: 任务ID
+            status: 新状态
+            message: 状态消息
+            metadata: 元数据
+            progress: 进度值（0.0-1.0）
+            
+        Returns:
+            更新是否成功
+        """
+        updates = {'status': status.value}
+        
+        if message:
+            updates['last_message'] = message
+        
+        if progress is not None:
+            updates['progress'] = max(0.0, min(1.0, progress))
+        
+        if metadata:
+            updates['metadata'] = updates.get('metadata', {})
+            updates['metadata'].update(metadata)
+        
+        return self.update_state(task_id, updates)
+    
     def update_status(self, task_id: str, status: TaskStatus, 
                      message: str = None, metadata: Dict[str, Any] = None) -> bool:
         """
@@ -203,6 +233,19 @@ class StateManager:
         current_attempts = state_data.get('attempts', 0)
         return self.update_state(task_id, {'attempts': current_attempts + 1})
     
+    def increment_task_errors(self, task_id: str, error_message: str) -> bool:
+        """
+        增加任务错误次数（兼容性方法）
+        
+        Args:
+            task_id: 任务ID
+            error_message: 错误消息
+            
+        Returns:
+            更新是否成功
+        """
+        return self.increment_error_count(task_id, error_message)
+    
     def increment_error_count(self, task_id: str, error_message: str) -> bool:
         """
         增加错误次数
@@ -226,6 +269,20 @@ class StateManager:
         }
         
         return self.update_state(task_id, updates)
+    
+    def update_task_progress(self, task_id: str, progress: float, message: str = None) -> bool:
+        """
+        更新任务进度（兼容性方法）
+        
+        Args:
+            task_id: 任务ID
+            progress: 进度值（0.0-1.0）
+            message: 进度消息
+            
+        Returns:
+            更新是否成功
+        """
+        return self.set_progress(task_id, progress, message)
     
     def set_progress(self, task_id: str, progress: float, 
                     message: str = None) -> bool:

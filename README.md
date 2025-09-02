@@ -88,18 +88,59 @@
 pip install -r requirements.txt
 
 # 或者手动安装主要依赖
-pip install PyYAML click APScheduler requests GitPython
+pip install PyYAML click APScheduler requests GitPython python-dotenv argcomplete
 ```
 
-### 系统验证
+### 🧪 系统自测
 
-运行系统测试脚本验证安装：
+系统提供了专门的自测工具 `system_manager.py`，用于验证系统功能和调度机制：
+
+#### 1. 启动系统进行自测
 
 ```bash
-python test_system.py
+# 启动系统并持续运行（推荐用于自测）
+python system_manager.py run
 ```
 
-如果看到 "🎉 所有测试通过！系统基本功能正常" 表示安装成功。
+系统启动后会：
+- ✅ 自动加载所有任务配置
+- ✅ 启动任务调度器
+- ✅ 显示任务调度状态
+- ✅ 保持进程运行等待任务执行
+
+#### 2. 检查系统状态
+
+在另一个终端窗口检查系统状态：
+
+```bash
+# 检查系统运行状态
+python system_manager.py status
+
+# 停止系统
+python system_manager.py stop
+```
+
+#### 3. 自测功能验证
+
+通过自测可以验证：
+- ✅ 配置加载和验证
+- ✅ 任务调度器启动
+- ✅ 定时任务调度
+- ✅ 任务执行流程
+- ✅ 状态文件管理
+- ✅ 通知服务集成
+- ✅ AI服务连接
+- ✅ Git服务操作
+
+#### 4. 查看执行日志
+
+系统运行时会实时显示详细日志：
+```
+2025-09-02 18:16:00,001 - apscheduler.executors.default - INFO - Running job "Task_auto-webhook-tool"
+2025-09-02 18:16:00,002 - src.services.service_factory - INFO - AI服务创建成功: deepseek
+2025-09-02 18:16:00,002 - src.services.service_factory - INFO - Git服务创建成功: github
+2025-09-02 18:16:00,004 - src.core.task_executor.auto-webhook-tool - INFO - 服务初始化成功
+```
 
 ### 配置系统
 
@@ -111,6 +152,7 @@ python test_system.py
 # AI服务配置
 CLAUDE_API_KEY=your_claude_api_key
 DEEPSEEK_API_KEY=your_deepseek_api_key
+DEFAULT_AI_SERVICE=deepseek
 
 # Git服务配置
 GITHUB_TOKEN=your_github_token
@@ -118,6 +160,7 @@ GITHUB_USERNAME=your_github_username
 GITLAB_TOKEN=your_gitlab_token
 GITLAB_BASE_URL=https://gitlab.com
 GITLAB_USERNAME=your_gitlab_username
+DEFAULT_GIT_SERVICE=github
 
 # 通知服务配置
 DINGTALK_WEBHOOK=your_dingtalk_webhook_url
@@ -143,7 +186,7 @@ max_concurrent_tasks: 5
 
 # AI服务配置
 ai_services:
-  default: "claude"
+  default: "${DEFAULT_AI_SERVICE}"
   claude:
     api_key: "${CLAUDE_API_KEY}"
     base_url: "https://api.anthropic.com"
@@ -151,44 +194,13 @@ ai_services:
 
 # Git配置
 git:
-  default: "github"
+  default: "${DEFAULT_GIT_SERVICE}"
   github:
     token: "${GITHUB_TOKEN}"
     username: "${GITHUB_USERNAME}"
 ```
 
-#### 3. 创建工作流模板
-
-系统支持工作流模板，在 `workflows/` 目录下创建：
-
-```bash
-workflows/
-├── base/                    # 基础模板
-│   └── base_workflow.yaml
-├── coding/                  # 编码任务模板
-│   └── coding_workflow.yaml
-├── review/                  # 审查任务模板
-│   └── review_workflow.yaml
-└── doc/                     # 文档任务模板
-    └── doc_workflow.yaml
-```
-
-#### 4. 创建AI提示词模板
-
-在 `prompts/` 目录下创建提示词模板：
-
-```bash
-prompts/
-├── coding/
-│   ├── coding_init_prompt.md
-│   └── coding_implement_prompt.md
-├── review/
-│   └── review_init_prompt.md
-└── doc/
-    └── doc_init_prompt.md
-```
-
-#### 5. 创建任务配置
+#### 3. 创建任务配置
 
 在 `config/tasks/` 目录下创建任务配置文件：
 
@@ -196,46 +208,52 @@ prompts/
 # config/tasks/example_coding_task.yaml
 task_id: "example_coding_task"
 name: "示例编码任务"
+description: "使用AI生成示例代码"
 type: "coding"
 enabled: true
 
-# 工作流模式配置
-workflow_mode: "manual"  # manual 或 automated
-
-# 调度配置
+# 任务调度配置
 schedule:
   type: "cron"
-  expression: "0 9 * * 1-5"  # 工作日早上9点
+  cron_expressions: ["0 9 * * *"]  # 每天上午9点执行
+  timezone: "UTC+8"
 
-# AI服务配置
-ai:
-  provider: "claude"
-  model: "claude-3-sonnet-20240229"
-  temperature: 0.1
-
-# Git服务配置
-git:
-  platform: "github"
-  repo_url: "https://github.com/your-username/your-repo"
-  branch: "main"
+# 编码任务特定配置
+coding:
+  project_path: "outputs/example-project"
+  branch_name: "feature/ai-generated"
+  base_branch: "master"
+  prompt: "创建一个简单的Web应用"
 
 # 通知配置
 notifications:
-  events: ["start", "complete", "error"]
-  channels: ["dingtalk"]
-
-# 重试和超时配置
-retry:
-  max_attempts: 3
-  base_delay: 60
-
-timeout:
-  task: 1800  # 30分钟
+  channels:
+    - "dingtalk"
+  events:
+    - "task_start"
+    - "task_complete"
+    - "task_error"
 ```
 
-### 启动系统
+## 🛠️ 使用指南
 
-#### 方式1: 使用CLI工具（推荐）
+### 系统管理命令（推荐）
+
+```bash
+# 启动系统（推荐用于自测）
+python system_manager.py run
+
+# 检查系统状态
+python system_manager.py status
+
+# 停止系统
+python system_manager.py stop
+
+# 查看帮助
+python system_manager.py --help
+```
+
+### CLI管理命令（辅助工具）
 
 ```bash
 # 查看系统状态
@@ -244,342 +262,129 @@ python src/cli/main.py status
 # 列出所有任务
 python src/cli/main.py list-tasks
 
-# 立即执行任务
-python src/cli/main.py run-task <task_id>
+# 查看任务详情
+python src/cli/main.py task-status <task_id>
 
-# 执行工作流任务
-python src/cli/main.py run-workflow <task_id>
-```
+# 手动执行任务
+python src/cli/main.py execute-task <task_id>
 
-#### 方式2: 直接运行主程序
+# 启动系统
+python src/cli/main.py start-system
 
-```bash
-python main.py
-```
-
-### 验证系统运行
-
-1. **检查配置加载**：
-   ```bash
-   python src/cli/main.py status
-   ```
-
-2. **测试任务执行**：
-   ```bash
-   python src/cli/main.py run-task <task_id>
-   ```
-
-3. **查看执行结果**：
-   - 检查 `outputs/` 目录下的输出文件
-   - 查看 `states/` 目录下的状态文件
-   - 检查 `logs/` 目录下的日志文件
-
-### 系统目录结构
-
-```
-auto-coder/
-├── src/                          # 源代码
-│   ├── core/                     # 核心模块（配置管理、状态管理、工作流引擎）
-│   ├── services/                 # 服务模块（AI、Git、通知服务）
-│   ├── tasks/                    # 任务执行器
-│   └── cli/                      # 命令行接口
-├── config/                       # 配置文件
-│   ├── global_config.yaml        # 全局配置
-│   └── tasks/                    # 任务配置
-├── workflows/                    # 工作流模板
-│   ├── base/                     # 基础模板
-│   ├── coding/                   # 编码任务模板
-│   ├── review/                   # 审查任务模板
-│   └── doc/                      # 文档任务模板
-├── prompts/                      # AI提示词模板
-│   ├── coding/                   # 编码任务提示词
-│   ├── review/                   # 审查任务提示词
-│   └── doc/                      # 文档任务提示词
-├── outputs/                      # 输出文件
-│   ├── reviews/                  # 审查报告
-│   ├── docs/                     # 生成的文档
-│   └── custom_tasks/             # 自定义任务结果
-├── states/                       # 状态文件
-├── logs/                         # 日志文件
-├── archives/                     # 归档文件
-└── test_system.py               # 系统测试脚本
-```
-
-## 🛠️ CLI命令使用
-
-### 系统管理
-```bash
-# 查看系统状态
-python src/cli/main.py status
-
-# 查看系统配置摘要
-python src/cli/main.py config-summary
-
-# 重新加载配置
-python src/cli/main.py reload-config
+# 停止系统
+python src/cli/main.py stop-system
 
 # 清理系统
 python src/cli/main.py cleanup
 ```
 
-### 任务管理
-```bash
-# 列出所有任务
-python src/cli/main.py list-tasks
-
-# 查看任务状态
-python src/cli/main.py task-status <task_id>
-
-# 立即执行任务
-python src/cli/main.py run-task <task_id>
-
-# 执行工作流任务
-python src/cli/main.py run-workflow <task_id>
-
-# 停止任务
-python src/cli/main.py stop-task <task_id>
-
-# 查看任务历史
-python src/cli/main.py task-history <task_id>
-```
-
-### 工作流管理
-```bash
-# 列出工作流模板
-python src/cli/main.py list-workflows
-
-# 查看工作流状态
-python src/cli/main.py workflow-status <task_id>
-
-# 验证工作流配置
-python src/cli/main.py validate-workflow <task_id>
-```
-
-### 其他命令
-```bash
-# 显示版本信息
-python src/cli/main.py version
-
-# 启用详细日志
-python src/cli/main.py --verbose status
-
-# 运行系统测试
-python test_system.py
-```
-
-## 📁 目录结构
-
-```
-auto-coder/
-├── src/                          # 源代码目录
-│   ├── core/                     # 核心模块
-│   ├── services/                 # 服务模块
-│   ├── tasks/                    # 任务执行器
-│   ├── cli/                      # CLI接口
-│   └── utils/                    # 工具模块
-├── config/                       # 配置文件目录
-│   ├── global_config.yaml        # 全局配置
-│   └── ...                       # 其他配置
-├── tasks/                        # 任务配置目录
-│   ├── example_coding_task.yaml  # 示例编码任务
-│   ├── example_review_task.yaml  # 示例审查任务
-│   └── ...                       # 其他任务配置
-├── standards/                    # 编码规范目录
-│   ├── java_coding_standards.md  # Java编码规范
-│   ├── python_coding_standards.md # Python编码规范
-│   └── ...                       # 其他规范
-├── logs/                         # 日志目录
-├── states/                       # 状态文件目录
-├── archives/                     # 归档文件目录
-├── outputs/                      # 输出文件目录
-│   ├── reviews/                  # 审查报告
-│   ├── docs/                     # 生成的文档
-│   ├── requirement_reviews/      # 需求审查报告
-│   └── custom_tasks/             # 自定义任务结果
-├── main.py                       # 主程序入口
-├── requirements.txt              # Python依赖
-└── README.md                     # 项目说明
-```
-
-## ⚙️ 配置说明
-
-### 全局配置 (config/global_config.yaml)
-
-```yaml
-# 系统基本配置
-system:
-  name: "自动化AI任务执行系统"
-  version: "1.0.0"
-  max_concurrent_tasks: 5
-
-# AI服务配置
-ai_services:
-  claude:
-    api_key: "${CLAUDE_API_KEY}"
-    base_url: "https://api.anthropic.com"
-    models:
-      default: "claude-3-sonnet-20240229"
-      coding: "claude-3-sonnet-20240229"
-      review: "claude-3-sonnet-20240229"
-  
-  deepseek:
-    api_key: "${DEEPSEEK_API_KEY}"
-    base_url: "https://api.deepseek.com"
-    models:
-      default: "deepseek-chat"
-
-# Git服务配置
-git_services:
-  github:
-    token: "${GITHUB_TOKEN}"
-    username: "${GITHUB_USERNAME}"
-    base_url: "https://api.github.com"
-  
-  gitlab:
-    token: "${GITLAB_TOKEN}"
-    username: "${GITLAB_USERNAME}"
-    base_url: "https://gitlab.com/api/v4"
-
-# 通知服务配置
-notifications:
-  dingtalk:
-    webhook_url: "${DINGTALK_WEBHOOK_URL}"
-    secret: "${DINGTALK_SECRET}"
-    at_users: ["@张三", "@李四"]
-    at_all: false
-```
-
 ### 任务配置示例
 
+#### 编码任务配置
+
 ```yaml
-# 编码任务配置
-task_id: "my_coding_task"
+task_id: "webhook-tool"
+name: "Webhook管理工具"
 type: "coding"
 enabled: true
-priority: 5
 
 schedule:
   type: "cron"
-  cron:
-    minute: "0"
-    hour: "9"
-    day: "*"
-    month: "*"
-    day_of_week: "1-5"
+  cron_expressions: ["0 9 * * 1"]  # 每周一上午9点
+  timezone: "UTC+8"
 
 coding:
-  project_path: "./my_project"
-  branch_name: "feature/ai-generated"
-  prompt: "请生成一个用户登录验证函数"
-  output_file: "auth.py"
-
-ai:
-  provider: "claude"
-  model: "claude-3-sonnet-20240229"
-  max_tokens: 2000
-  temperature: 0.1
+  project_path: "outputs/webhook-tool"
+  branch_name: "feature/webhook-management"
+  base_branch: "master"
+  prompt: "创建一个Webhook管理工具，支持增删改查功能"
 ```
 
-## 🔧 开发指南
+#### 代码审查任务配置
 
-### 添加新的任务类型
+```yaml
+task_id: "code-review"
+name: "代码质量审查"
+type: "review"
+enabled: true
 
-1. 在 `src/tasks/` 目录下创建新的执行器类
-2. 继承 `TaskExecutor` 基类
-3. 实现 `_execute_task` 方法
-4. 在 `TaskExecutorFactory` 中注册新的执行器
+schedule:
+  type: "interval"
+  seconds: 3600  # 每小时执行一次
 
-### 扩展AI服务
+review:
+  target_path: "outputs/webhook-tool"
+  output_format: "markdown"
+  check_types: ["quality", "security", "performance"]
+```
 
-1. 在 `src/services/` 目录下创建新的AI服务类
-2. 继承 `AIService` 基类
-3. 实现必要的方法
-4. 在配置文件中添加新的服务配置
+## 📊 监控和日志
 
-### 自定义通知渠道
+### 日志文件位置
 
-1. 在 `src/services/` 目录下创建新的通知器类
-2. 继承 `BaseNotifier` 基类
-3. 实现 `send_notification` 方法
-4. 在 `NotifyService` 中注册新的通知器
-
-## 📊 监控和调试
-
-### 日志系统
-
-- 日志级别: INFO
-- 日志保留: 30天
-- 日志位置: `logs/` 目录
-- 敏感信息自动脱敏
+- **系统日志**: `logs/system_manager.log`
+- **CLI日志**: `logs/cli.log`
+- **任务状态**: `states/<task_id>.json`
 
 ### 状态监控
 
-- 任务执行状态实时跟踪
-- 进度百分比更新
-- 错误计数和重试统计
-- 元数据记录
+系统提供多种监控方式：
 
-### 性能指标
+1. **实时日志监控**: 通过 `system_manager.py run` 查看实时执行日志
+2. **状态文件检查**: 查看 `states/` 目录下的任务状态文件
+3. **CLI状态查询**: 使用 `python system_manager.py status` 查看系统状态
 
-- 任务执行时间统计
-- 并发任务数量监控
-- 资源使用情况跟踪
-- 系统响应时间监控
+## 🔧 故障排除
 
-## 🔒 安全特性
+### 常见问题
 
-- API密钥通过环境变量管理
-- 敏感信息自动脱敏
-- 访问权限控制
-- 操作日志记录
+1. **任务调度失败**
+   - 检查cron表达式格式
+   - 确认时区设置正确
+   - 查看调度器日志
 
-## 🚧 注意事项
+2. **AI服务连接失败**
+   - 检查API密钥配置
+   - 确认网络连接
+   - 验证服务配额
 
-1. **API密钥安全**: 请妥善保管AI服务和Git服务的API密钥
-2. **网络环境**: 确保系统能够访问AI服务API和Git仓库
-3. **资源限制**: 注意AI服务的调用频率和配额限制
-4. **文件权限**: 确保系统有足够的文件读写权限
+3. **Git操作失败**
+   - 检查Git凭证配置
+   - 确认仓库权限
+   - 验证分支名称
 
-## 🤝 贡献指南
+4. **通知发送失败**
+   - 检查Webhook URL
+   - 确认通知服务配置
+   - 验证网络连接
+
+### 调试技巧
+
+1. **启用详细日志**:
+   ```bash
+   python system_manager.py run --verbose
+   ```
+
+2. **检查配置文件**:
+   ```bash
+   python src/cli/main.py config-summary
+   ```
+
+3. **验证任务配置**:
+   ```bash
+   python src/cli/main.py validate-task <task_id>
+   ```
+
+## 📚 文档
+
+- [项目结构总结](docs/项目结构总结.md)
+- [Tab补全设置指南](docs/Tab补全设置指南.md)
+- [邮件推送配置指南](docs/邮件推送配置指南.md)
+
+## 🤝 贡献
 
 欢迎提交Issue和Pull Request来改进系统！
 
-### 开发环境设置
+## �� 许可证
 
-```bash
-# 克隆仓库
-git clone <repository_url>
-cd auto-coder
-
-# 安装开发依赖
-pip install -r requirements.txt
-
-# 运行测试
-pytest
-
-# 代码格式化
-black src/
-flake8 src/
-```
-
-## 📄 许可证
-
-本项目采用MIT许可证，详见LICENSE文件。
-
-## 📞 联系方式
-
-- 项目维护者: Auto Coder Team
-- 邮箱: support@auto-coder.com
-- 项目地址: [GitHub Repository]
-
----
-
-**🎉 系统实现完成！** 
-
-现在您可以：
-1. 配置AI服务和Git服务
-2. 创建任务配置文件
-3. 启动系统并开始使用
-4. 通过CLI工具管理任务
-
-如有问题，请查看日志文件或提交Issue。
+MIT License

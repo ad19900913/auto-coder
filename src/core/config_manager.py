@@ -56,7 +56,7 @@ class ConfigManager:
             # 加载任务配置
             self._load_task_configs()
             
-            self.logger.info("配置加载完成")
+            self.logger.debug("配置加载完成")
         except Exception as e:
             self.logger.error(f"配置加载失败: {e}")
             raise
@@ -80,7 +80,7 @@ class ConfigManager:
         if env_file:
             try:
                 load_dotenv(env_file)
-                self.logger.info(f"成功加载环境变量文件: {env_file}")
+                self.logger.debug(f"成功加载环境变量文件: {env_file}")
                 
                 # 显示加载的环境变量（不显示敏感信息）
                 env_vars = []
@@ -122,7 +122,7 @@ class ConfigManager:
                 if warnings:
                     self.logger.warning(f"全局配置警告: {warnings}")
             
-            self.logger.info("全局配置加载成功")
+            self.logger.debug("全局配置加载成功")
         except Exception as e:
             self.logger.error(f"全局配置加载失败: {e}")
             self.global_config = self._get_default_global_config()
@@ -149,7 +149,7 @@ class ConfigManager:
                             'config': config,
                             'last_modified': standards_path.stat().st_mtime
                         }
-                    self.logger.info(f"编码规范加载成功: {language}")
+                    self.logger.debug(f"编码规范加载成功: {language}")
                 else:
                     self.logger.warning(f"编码规范文件不存在: {standards_path}")
             except Exception as e:
@@ -178,7 +178,7 @@ class ConfigManager:
                             self.logger.warning(f"任务配置警告 {task_name}: {warnings}")
                     
                     self.task_configs[task_name] = task_config
-                self.logger.info(f"任务配置加载成功: {task_name}")
+                self.logger.debug(f"任务配置加载成功: {task_name}")
             except Exception as e:
                 self.logger.error(f"任务配置加载失败 {task_file}: {e}")
     

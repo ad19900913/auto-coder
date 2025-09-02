@@ -214,11 +214,20 @@ class ConfigValidator:
         
         # 验证cron表达式
         if schedule_type == 'cron':
-            expression = config.get('expression')
-            if not expression:
-                self.errors.append(f"任务 {task_id} cron调度缺少表达式")
-            elif not self._is_valid_cron_expression(expression):
-                self.errors.append(f"任务 {task_id} cron表达式无效: {expression}")
+            # 检查新的cron_expressions格式（优先）
+            cron_expressions = config.get('cron_expressions', [])
+            if cron_expressions:
+                # 验证每个cron表达式
+                for i, expr in enumerate(cron_expressions):
+                    if not self._is_valid_cron_expression(expr):
+                        self.errors.append(f"任务 {task_id} cron表达式[{i}]无效: {expr}")
+            else:
+                # 检查旧的expression字段格式（向后兼容）
+                expression = config.get('expression')
+                if not expression:
+                    self.errors.append(f"任务 {task_id} cron调度缺少表达式")
+                elif not self._is_valid_cron_expression(expression):
+                    self.errors.append(f"任务 {task_id} cron表达式无效: {expression}")
     
     def _validate_task_ai_config(self, task_id: str, config: Dict[str, Any]):
         """验证任务AI配置"""

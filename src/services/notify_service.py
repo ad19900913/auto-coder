@@ -37,19 +37,19 @@ class NotifyService:
         dingtalk_config = self.config_manager.get_notification_config().get('dingtalk', {})
         if dingtalk_config.get('webhook_url'):
             self.channels['dingtalk'] = DingTalkNotifier(dingtalk_config)
-            self.logger.info("钉钉通知渠道初始化成功")
+            self.logger.debug("钉钉通知渠道初始化成功")
         
         # 邮件通知
         email_config = self.config_manager.get_notification_config().get('email', {})
         if email_config.get('smtp_server'):
             self.channels['email'] = EmailNotifier(email_config)
-            self.logger.info("邮件通知渠道初始化成功")
+            self.logger.debug("邮件通知渠道初始化成功")
         
         # Webhook通知（预留）
         webhook_config = self.config_manager.get_notification_config().get('webhook', {})
         if webhook_config.get('url'):
             # self.channels['webhook'] = WebhookNotifier(webhook_config)
-            self.logger.info("Webhook通知渠道初始化成功")
+            self.logger.debug("Webhook通知渠道初始化成功")
     
     def notify_task_start(self, task_config: Dict[str, Any]):
         """通知任务开始"""

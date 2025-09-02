@@ -52,7 +52,7 @@ class TaskManager:
         # 停止标志
         self._stop_flag = False
         
-        self.logger.info("任务管理器初始化完成")
+        self.logger.debug("任务管理器初始化完成")
     
     def start(self):
         """启动任务管理器"""

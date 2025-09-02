@@ -1,0 +1,15 @@
+{
+  "running": true,
+  "task_manager_running": true,
+  "scheduler_stats": {
+    "running": true,
+    "job_count": 1,
+    "running_tasks": 0,
+    "max_workers": 5,
+    "scheduler_info": {
+      "executors": []
+    }
+  },
+  "running_tasks": [],
+  "last_update": "2025-09-02T19:23:47.238923"
+}

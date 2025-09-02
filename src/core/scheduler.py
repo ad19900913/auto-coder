@@ -68,7 +68,7 @@ class TaskScheduler:
             # 添加事件监听器
             self.scheduler.add_listener(self._job_listener, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)
             
-            self.logger.info("任务调度器初始化成功")
+            self.logger.debug("任务调度器初始化成功")
             
         except Exception as e:
             self.logger.error(f"任务调度器初始化失败: {e}")
@@ -484,8 +484,7 @@ class TaskScheduler:
                 'running_tasks': len(self.get_running_tasks()),
                 'max_workers': self.max_workers,
                 'scheduler_info': {
-                    'jobstores': list(self.scheduler.jobstores.keys()),
-                    'executors': list(self.scheduler.executors.keys())
+                    'executors': list(self.scheduler.executors.keys()) if hasattr(self.scheduler, 'executors') else []
                 }
             }
             

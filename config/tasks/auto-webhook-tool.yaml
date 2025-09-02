@@ -11,7 +11,7 @@ workflow_mode: "automated"  # manual 或 automated
 # 任务调度配置
 schedule:
   type: "cron"
-  expression: "30 15 * * *"  # 工作日15点30分执行
+  cron_expressions: ["20 18 * * *"]  # 18点20分执行（用于测试）
   timezone: "UTC+8"
 
 # 任务参数
@@ -20,6 +20,16 @@ parameters:
   repo_url: "https://github.com/ad19900913/auto-webhook-tool"
   branch: "master"
   output_dir: "outputs/auto-webhook-tool"
+  project_path: "outputs/auto-webhook-tool"
+  branch_name: "master"
+  prompt: "使用最新的前端框架和UI框架实现一套webhook回调地址、回调消息管理工具，包括webhook地址的增删改查、webhook回调消息的查询功能"
+
+# 编码任务特定配置
+coding:
+  project_path: "outputs/auto-webhook-tool"
+  branch_name: "feature/webhook-tool"
+  base_branch: "master"
+  prompt: "使用最新的前端框架和UI框架实现一套webhook回调地址、回调消息管理工具，包括webhook地址的增删改查、webhook回调消息的查询功能"
 
 # AI配置
 # ai:

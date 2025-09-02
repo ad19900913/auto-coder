@@ -51,7 +51,7 @@ class TaskExecutorFactory:
                 'custom': CustomTaskExecutor
             }
             
-            self.logger.info(f"任务执行器注册完成，支持的任务类型: {list(self._executor_registry.keys())}")
+            self.logger.debug(f"任务执行器注册完成，支持的任务类型: {list(self._executor_registry.keys())}")
             
         except ImportError as e:
             self.logger.warning(f"部分任务执行器导入失败: {e}")

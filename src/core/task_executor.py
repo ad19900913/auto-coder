@@ -108,6 +108,13 @@ class TaskExecutor(ABC):
         try:
             self.start_time = datetime.now()
             
+            # 创建状态文件（如果不存在）
+            if not self.state_manager.load_state_file(self.task_id):
+                self.state_manager.create_state_file(
+                    self.task_id, 
+                    self.task_config.get('type', 'unknown')
+                )
+            
             # 更新任务状态为运行中
             self.state_manager.update_task_status(
                 self.task_id, 
@@ -120,11 +127,7 @@ class TaskExecutor(ABC):
             )
             
             # 发送任务开始通知
-            self.notify_service.notify_task_start(
-                task_id=self.task_id,
-                task_type=self.task_config.get('type', 'unknown'),
-                start_time=self.start_time
-            )
+            self.notify_service.notify_task_start(self.task_config)
             
             self.logger.info(f"任务开始执行: {self.task_id}")
             
@@ -173,19 +176,9 @@ class TaskExecutor(ABC):
             
             # 发送任务完成通知
             if status == TaskStatus.COMPLETED:
-                self.notify_service.notify_task_complete(
-                    task_id=self.task_id,
-                    task_type=self.task_config.get('type', 'unknown'),
-                    execution_time=execution_time,
-                    result=result
-                )
+                self.notify_service.notify_task_complete(self.task_config, execution_time)
             else:
-                self.notify_service.notify_task_error(
-                    task_id=self.task_id,
-                    task_type=self.task_config.get('type', 'unknown'),
-                    error_message=result.get('error', '未知错误'),
-                    execution_time=execution_time
-                )
+                self.notify_service.notify_task_error(self.task_config, result.get('error', '未知错误'))
             
             self.logger.info(f"任务执行完成: {self.task_id}, 耗时: {execution_time:.2f}秒")
             
