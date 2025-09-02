@@ -4,33 +4,41 @@
 
 ## ✨ 系统特性
 
-- **🤖 多AI服务支持**: 集成Claude、DeepSeek等主流AI服务
+- **🤖 多AI服务支持**: 集成Claude、DeepSeek等主流AI服务，支持服务工厂模式
 - **📅 灵活调度**: 支持crontab表达式、间隔调度、指定时间调度
 - **🔧 多任务类型**: 编码、审查、文档、需求审查、自定义任务
+- **⚙️ 工作流引擎**: 支持工作流模板、步骤控制、人工审批模式
 - **📊 状态管理**: 完整的任务状态跟踪和持久化
 - **🔄 并发执行**: 支持多任务并发执行，可配置最大工作线程数
-- **❌ 错误处理**: 智能重试机制，指数退避策略
+- **❌ 错误处理**: 智能重试机制，指数退避策略，自定义异常体系
 - **🔔 通知系统**: 支持钉钉机器人、邮件、Webhook等多种通知方式
 - **💾 Git集成**: 支持GitHub、GitLab平台操作
 - **📝 进度跟踪**: 实时任务进度更新和状态监控
 - **🖥️ CLI管理**: 完整的命令行管理工具
+- **✅ 配置验证**: 自动验证配置文件完整性和有效性
+- **🎯 服务工厂**: 统一服务实例创建、缓存和依赖注入
+- **📋 模板系统**: 工作流模板继承、AI提示词模板管理
 
 ## 🏗️ 系统架构
 
 ```
 自动化AI任务执行系统
 ├── 核心模块 (src/core/)
-│   ├── 配置管理器 (ConfigManager)
-│   ├── 状态管理器 (StateManager)
-│   ├── 状态文件管理器 (StateFileManager)
-│   ├── 任务调度器 (TaskScheduler)
-│   ├── 任务执行器基类 (TaskExecutor)
-│   ├── 任务执行器工厂 (TaskExecutorFactory)
-│   └── 任务管理器 (TaskManager)
+│   ├── 配置管理器 (ConfigManager) - 全局和任务级配置管理
+│   ├── 配置验证器 (ConfigValidator) - 配置文件完整性验证
+│   ├── 状态管理器 (StateManager) - 任务状态跟踪和持久化
+│   ├── 状态文件管理器 (StateFileManager) - 状态文件清理和归档
+│   ├── 任务调度器 (TaskScheduler) - 基于APScheduler的任务调度
+│   ├── 任务执行器基类 (TaskExecutor) - 任务执行标准接口
+│   ├── 任务执行器工厂 (TaskExecutorFactory) - 任务执行器创建和注册
+│   ├── 任务管理器 (TaskManager) - 任务生命周期管理
+│   ├── 工作流引擎 (WorkflowEngine) - 工作流模板执行引擎
+│   └── 自定义异常 (exceptions) - 系统特定异常类型
 ├── 服务模块 (src/services/)
-│   ├── 通知服务 (NotifyService)
-│   ├── AI服务 (AIService)
-│   └── Git服务 (GitService)
+│   ├── 服务工厂 (ServiceFactory) - 统一服务实例创建和缓存
+│   ├── AI服务 (AIService) - Claude、DeepSeek等AI服务抽象
+│   ├── Git服务 (GitService) - GitHub、GitLab等Git平台抽象
+│   └── 通知服务 (NotifyService) - 多渠道通知服务
 ├── 任务执行器 (src/tasks/)
 │   ├── 编码任务执行器 (CodingTaskExecutor)
 │   ├── 代码审查任务执行器 (ReviewTaskExecutor)
@@ -39,11 +47,20 @@
 │   └── 自定义任务执行器 (CustomTaskExecutor)
 ├── CLI接口 (src/cli/)
 │   └── 命令行管理工具
+├── 工作流模板 (workflows/)
+│   ├── 基础模板 (base/) - 通用工作流步骤
+│   ├── 编码任务模板 (coding/) - 编码任务专用流程
+│   ├── 审查任务模板 (review/) - 审查任务专用流程
+│   └── 文档任务模板 (doc/) - 文档任务专用流程
+├── AI提示词模板 (prompts/)
+│   ├── 编码任务提示词 (coding/) - 编码相关AI提示
+│   ├── 审查任务提示词 (review/) - 审查相关AI提示
+│   └── 文档任务提示词 (doc/) - 文档相关AI提示
 └── 配置和文档
-    ├── 全局配置文件
-    ├── 任务配置文件
-    ├── 编码规范模板
-    └── 系统设计文档
+    ├── 全局配置文件 (config/global_config.yaml)
+    ├── 任务配置文件 (config/tasks/)
+    ├── 编码规范模板 (standards/)
+    └── 系统设计文档 (docs/)
 ```
 
 ## 📋 任务类型
@@ -67,56 +84,232 @@
 ### 安装依赖
 
 ```bash
+# 安装基础依赖
 pip install -r requirements.txt
+
+# 或者手动安装主要依赖
+pip install PyYAML click APScheduler requests GitPython
 ```
+
+### 系统验证
+
+运行系统测试脚本验证安装：
+
+```bash
+python test_system.py
+```
+
+如果看到 "🎉 所有测试通过！系统基本功能正常" 表示安装成功。
 
 ### 配置系统
 
-1. **配置AI服务**
-   - 编辑 `config/global_config.yaml`
-   - 设置Claude、DeepSeek等AI服务的API密钥和配置
+#### 1. 设置环境变量
 
-2. **配置Git服务**
-   - 设置GitHub、GitLab的访问令牌和仓库信息
+创建 `.env` 文件或在系统环境变量中设置：
 
-3. **配置通知服务**
-   - 设置钉钉机器人的Webhook URL和密钥
+```bash
+# AI服务配置
+CLAUDE_API_KEY=your_claude_api_key
+DEEPSEEK_API_KEY=your_deepseek_api_key
 
-4. **创建任务配置**
-   - 在 `tasks/` 目录下创建任务配置文件
-   - 参考示例配置文件进行配置
+# Git服务配置
+GITHUB_TOKEN=your_github_token
+GITHUB_USERNAME=your_github_username
+GITLAB_TOKEN=your_gitlab_token
+GITLAB_BASE_URL=https://gitlab.com
+GITLAB_USERNAME=your_gitlab_username
+
+# 通知服务配置
+DINGTALK_WEBHOOK=your_dingtalk_webhook_url
+DINGTALK_SECRET=your_dingtalk_secret
+```
+
+#### 2. 配置全局设置
+
+编辑 `config/global_config.yaml`：
+
+```yaml
+# 系统基本信息
+name: "自动化AI任务执行系统"
+version: "1.0.0"
+max_concurrent_tasks: 5
+
+# AI服务配置
+ai_services:
+  default: "claude"
+  claude:
+    api_key: "${CLAUDE_API_KEY}"
+    base_url: "https://api.anthropic.com"
+    model: "claude-3-sonnet-20240229"
+
+# Git配置
+git:
+  default: "github"
+  github:
+    token: "${GITHUB_TOKEN}"
+    username: "${GITHUB_USERNAME}"
+```
+
+#### 3. 创建工作流模板
+
+系统支持工作流模板，在 `workflows/` 目录下创建：
+
+```bash
+workflows/
+├── base/                    # 基础模板
+│   └── base_workflow.yaml
+├── coding/                  # 编码任务模板
+│   └── coding_workflow.yaml
+├── review/                  # 审查任务模板
+│   └── review_workflow.yaml
+└── doc/                     # 文档任务模板
+    └── doc_workflow.yaml
+```
+
+#### 4. 创建AI提示词模板
+
+在 `prompts/` 目录下创建提示词模板：
+
+```bash
+prompts/
+├── coding/
+│   ├── coding_init_prompt.md
+│   └── coding_implement_prompt.md
+├── review/
+│   └── review_init_prompt.md
+└── doc/
+    └── doc_init_prompt.md
+```
+
+#### 5. 创建任务配置
+
+在 `config/tasks/` 目录下创建任务配置文件：
+
+```yaml
+# config/tasks/example_coding_task.yaml
+task_id: "example_coding_task"
+name: "示例编码任务"
+type: "coding"
+enabled: true
+
+# 工作流模式配置
+workflow_mode: "manual"  # manual 或 automated
+
+# 调度配置
+schedule:
+  type: "cron"
+  expression: "0 9 * * 1-5"  # 工作日早上9点
+
+# AI服务配置
+ai:
+  provider: "claude"
+  model: "claude-3-sonnet-20240229"
+  temperature: 0.1
+
+# Git服务配置
+git:
+  platform: "github"
+  repo_url: "https://github.com/your-username/your-repo"
+  branch: "main"
+
+# 通知配置
+notifications:
+  events: ["start", "complete", "error"]
+  channels: ["dingtalk"]
+
+# 重试和超时配置
+retry:
+  max_attempts: 3
+  base_delay: 60
+
+timeout:
+  task: 1800  # 30分钟
+```
 
 ### 启动系统
 
-#### 方式1: 直接运行主程序
-```bash
-python main.py
-```
+#### 方式1: 使用CLI工具（推荐）
 
-#### 方式2: 使用CLI工具
 ```bash
-# 启动系统
-python src/cli/main.py start-system
-
 # 查看系统状态
 python src/cli/main.py status
 
 # 列出所有任务
 python src/cli/main.py list-tasks
+
+# 立即执行任务
+python src/cli/main.py run-task <task_id>
+
+# 执行工作流任务
+python src/cli/main.py run-workflow <task_id>
+```
+
+#### 方式2: 直接运行主程序
+
+```bash
+python main.py
+```
+
+### 验证系统运行
+
+1. **检查配置加载**：
+   ```bash
+   python src/cli/main.py status
+   ```
+
+2. **测试任务执行**：
+   ```bash
+   python src/cli/main.py run-task <task_id>
+   ```
+
+3. **查看执行结果**：
+   - 检查 `outputs/` 目录下的输出文件
+   - 查看 `states/` 目录下的状态文件
+   - 检查 `logs/` 目录下的日志文件
+
+### 系统目录结构
+
+```
+auto-coder/
+├── src/                          # 源代码
+│   ├── core/                     # 核心模块（配置管理、状态管理、工作流引擎）
+│   ├── services/                 # 服务模块（AI、Git、通知服务）
+│   ├── tasks/                    # 任务执行器
+│   └── cli/                      # 命令行接口
+├── config/                       # 配置文件
+│   ├── global_config.yaml        # 全局配置
+│   └── tasks/                    # 任务配置
+├── workflows/                    # 工作流模板
+│   ├── base/                     # 基础模板
+│   ├── coding/                   # 编码任务模板
+│   ├── review/                   # 审查任务模板
+│   └── doc/                      # 文档任务模板
+├── prompts/                      # AI提示词模板
+│   ├── coding/                   # 编码任务提示词
+│   ├── review/                   # 审查任务提示词
+│   └── doc/                      # 文档任务提示词
+├── outputs/                      # 输出文件
+│   ├── reviews/                  # 审查报告
+│   ├── docs/                     # 生成的文档
+│   └── custom_tasks/             # 自定义任务结果
+├── states/                       # 状态文件
+├── logs/                         # 日志文件
+├── archives/                     # 归档文件
+└── test_system.py               # 系统测试脚本
 ```
 
 ## 🛠️ CLI命令使用
 
 ### 系统管理
 ```bash
-# 启动系统
-python src/cli/main.py start-system
-
-# 停止系统
-python src/cli/main.py stop-system
-
 # 查看系统状态
 python src/cli/main.py status
+
+# 查看系统配置摘要
+python src/cli/main.py config-summary
+
+# 重新加载配置
+python src/cli/main.py reload-config
 
 # 清理系统
 python src/cli/main.py cleanup
@@ -133,8 +326,26 @@ python src/cli/main.py task-status <task_id>
 # 立即执行任务
 python src/cli/main.py run-task <task_id>
 
+# 执行工作流任务
+python src/cli/main.py run-workflow <task_id>
+
 # 停止任务
 python src/cli/main.py stop-task <task_id>
+
+# 查看任务历史
+python src/cli/main.py task-history <task_id>
+```
+
+### 工作流管理
+```bash
+# 列出工作流模板
+python src/cli/main.py list-workflows
+
+# 查看工作流状态
+python src/cli/main.py workflow-status <task_id>
+
+# 验证工作流配置
+python src/cli/main.py validate-workflow <task_id>
 ```
 
 ### 其他命令
@@ -144,6 +355,9 @@ python src/cli/main.py version
 
 # 启用详细日志
 python src/cli/main.py --verbose status
+
+# 运行系统测试
+python test_system.py
 ```
 
 ## 📁 目录结构
