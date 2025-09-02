@@ -2,8 +2,14 @@
 # 版本: 1.0
 # 更新时间: 2025-01-20
 
+# 系统基本信息
+name: "自动化AI任务执行系统"
+version: "1.0.0"
+max_concurrent_tasks: 5
+
 # AI服务配置
 ai_services:
+  default: "claude"  # 默认AI服务
   claude:
     api_key: "${CLAUDE_API_KEY}"
     base_url: "https://api.anthropic.com"
@@ -61,12 +67,14 @@ ai_services:
 
 # Git配置
 git:
+  default: "github"  # 默认Git平台
   github:
     token: "${GITHUB_TOKEN}"
     username: "${GITHUB_USERNAME}"
   gitlab:
     token: "${GITLAB_TOKEN}"
     base_url: "${GITLAB_BASE_URL}"
+    username: "${GITLAB_USERNAME}"  # 添加用户名配置
 
 # 编码规范配置（按语言分类）
 coding_standards:

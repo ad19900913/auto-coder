@@ -366,7 +366,7 @@ class TaskExecutorFactory:
         else:
             errors.append(f"不支持的调度类型: {schedule_type}")
         
-                return errors
+        return errors
 
     def _is_valid_cron_expression(self, cron_expr: str) -> bool:
         """

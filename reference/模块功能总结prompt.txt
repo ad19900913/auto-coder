@@ -1,0 +1,21 @@
+【目标】
+- 请你深入分析当前代码库下com.streamax.framework.manager.domain.driver, 生成对应模块的梳理文档。
+- 总结产出一份完整、结构化、可落地的领域文档。严格遵循“输出要求”和“格式规范”。若输入缺失，请合理推断或标注 N/A，但避免空洞的占位符。
+
+【工作流程】
+- 使用Sequential Thinking MCP服务来完成顺序思考，确保任务按序执行，不遗漏任何步骤(如果存在Sequential Thinking MCP)。
+- 每个任务开始前，使用Sequential Thinking工具规划具体步骤
+- 每个步骤完成后，检查结果是否符合预期
+- 只有当前步骤全部完成且符合要求时，才能进入下一步骤
+- 记录每个思考步骤，确保不遗漏任何关键环节
+
+【输出要求】
+- 使用中文，严格按以下标题层级输出（从“##”开始，包含所有“###”小节）
+- 图表使用 Mermaid 基础语法（classDiagram / sequenceDiagram / graph TD / SQL 代码块等）
+- 列表使用“- ”作为项前缀，小项以加粗词开头说明
+- 术语、实体、接口命名前后一致
+- 若输入缺失，请标注 N/A 并尽量结合上下文补全
+
+【输出格式】
+-严格按照模板 #domain-template -3layer.md 
+-将修改更新输出到 #driver-overview.md

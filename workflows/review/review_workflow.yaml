@@ -1,0 +1,219 @@
+# Review任务工作流模板
+name: "review_workflow"
+version: "1.0"
+description: "代码走查任务专用工作流，支持独立和协作两种模式"
+extends: "base_workflow"
+
+# Review任务特定配置
+review_specific:
+  independent_mode: true  # 独立走查模式
+  collaborative_mode: true  # 协作走查模式
+  multi_branch_support: true  # 多分支对比支持
+  commit_history_analysis: true  # 提交历史分析
+  quality_metrics: true  # 质量指标分析
+
+# 完整步骤序列
+steps_sequence:
+  - name: "init"
+    template: "ai_call"
+    description: "走查范围分析和任务初始化"
+    pause_for_approval: false
+    dod_check: false
+    config:
+      prompt_template: "review_init_prompt"
+      max_tokens: 2000
+      output_format: "table"
+      table_columns:
+        - "序号"
+        - "文件/模块"
+        - "走查类型"
+        - "优先级"
+        - "预估时间"
+        - "依赖关系"
+        - "风险等级"
+        - "关键检查点"
+      
+  - name: "select_scope"
+    template: "scope_selection"
+    description: "走查范围选择"
+    pause_for_approval: true
+    dod_check: false
+    config:
+      selection_method: "interactive"
+      supported_commands:
+        - "继续"  # 选择所有范围
+        - "默认顺序"  # 按优先级顺序
+        - "选择序号X,Y"  # 批量选择
+        - "跳过序号X,Y"  # 跳过指定范围
+      scope_types:
+        - "代码质量"
+        - "架构设计"
+        - "性能优化"
+        - "安全检查"
+        - "接口一致性"
+      timeout: 3600
+      
+  - name: "code_analysis"
+    template: "ai_call"
+    description: "代码结构和质量分析"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      prompt_template: "review_code_analysis_prompt"
+      max_tokens: 4000
+      analysis_types:
+        - "代码结构分析"
+        - "设计模式检查"
+        - "代码复杂度评估"
+        - "命名规范检查"
+        - "注释完整性"
+      
+  - name: "architecture_review"
+    template: "ai_call"
+    description: "架构设计审查"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      prompt_template: "review_architecture_prompt"
+      max_tokens: 3000
+      review_aspects:
+        - "模块化设计"
+        - "依赖关系"
+        - "接口定义"
+        - "数据流设计"
+        - "扩展性考虑"
+      
+  - name: "security_review"
+    template: "ai_call"
+    description: "安全性审查"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      prompt_template: "review_security_prompt"
+      max_tokens: 2500
+      security_checks:
+        - "输入验证"
+        - "权限控制"
+        - "数据加密"
+        - "SQL注入防护"
+        - "XSS防护"
+      
+  - name: "performance_review"
+    template: "ai_call"
+    description: "性能审查"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      prompt_template: "review_performance_prompt"
+      max_tokens: 2500
+      performance_aspects:
+        - "算法复杂度"
+        - "数据库查询优化"
+        - "缓存策略"
+        - "资源使用"
+        - "并发处理"
+      
+  - name: "compatibility_check"
+    template: "ai_call"
+    description: "兼容性检查"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      prompt_template: "review_compatibility_prompt"
+      max_tokens: 2000
+      compatibility_types:
+        - "向后兼容"
+        - "API兼容"
+        - "数据库兼容"
+        - "版本兼容"
+        - "环境兼容"
+      
+  - name: "generate_report"
+    template: "ai_call"
+    description: "生成走查报告"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      prompt_template: "review_report_prompt"
+      max_tokens: 5000
+      output_format: "markdown"
+      report_sections:
+        - "执行摘要"
+        - "关键发现"
+        - "改进建议"
+        - "风险评估"
+        - "后续行动"
+      
+  - name: "approval_before_publish"
+    template: "human_approval"
+    description: "报告发布前人工审批"
+    pause_for_approval: true
+    dod_check: false
+    config:
+      timeout: 3600
+      message: "走查报告已生成，请审查后确认是否发布"
+      approval_method: "command_line"
+      
+  - name: "publish_report"
+    template: "file_operation"
+    description: "发布走查报告"
+    pause_for_approval: false
+    dod_check: false
+    config:
+      operation: "publish"
+      output_path: "{review_output_path}"
+      format: "markdown"
+      
+  - name: "notify_stakeholders"
+    template: "notification"
+    description: "通知相关人员"
+    pause_for_approval: false
+    dod_check: false
+    config:
+      notification_type: "review_completed"
+      recipients: "{stakeholders}"
+      include_summary: true
+      
+  - name: "finalize"
+    template: "ai_call"
+    description: "走查任务完成总结"
+    pause_for_approval: false
+    dod_check: false
+    config:
+      prompt_template: "review_finalize_prompt"
+      max_tokens: 1000
+
+# 协作模式配置
+collaboration_config:
+  source_task_integration: true
+  shared_artifacts:
+    - "implementation_plan"
+    - "code_changes"
+    - "commit_records"
+    - "test_results"
+  dependency_check: true
+
+# 可配置的DoD规则
+dod_rules:
+  configurable: true
+  default_rules:
+    code_analysis:
+      - "代码质量评分 >= 8.0"
+      - "关键问题数量 <= 5"
+      - "安全风险等级 <= Medium"
+    architecture_review:
+      - "架构一致性检查通过"
+      - "接口设计合理性确认"
+      - "依赖关系清晰"
+    security_review:
+      - "安全漏洞数量 = 0"
+      - "权限控制检查通过"
+      - "数据保护措施完备"
+    performance_review:
+      - "性能瓶颈识别完成"
+      - "优化建议具体可行"
+      - "资源使用合理"
+    report_generation:
+      - "报告内容完整"
+      - "建议具体可执行"
+      - "风险评估准确"

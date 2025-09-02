@@ -1,0 +1,337 @@
+# Custom任务工作流模板
+name: "custom_workflow"
+version: "1.0"
+description: "自定义任务专用工作流，支持灵活的任务目标和多格式输出"
+extends: "base_workflow"
+
+# 自定义任务特定配置
+custom_specific:
+  flexible_objectives: true  # 灵活的任务目标
+  multi_format_output: true  # 多格式输出
+  data_preprocessing: true  # 数据预处理
+  iterative_refinement: true  # 迭代优化
+  template_customization: true  # 模板定制
+
+# 完整步骤序列
+steps_sequence:
+  - name: "init"
+    template: "ai_call"
+    description: "自定义任务初始化和目标分析"
+    pause_for_approval: false
+    dod_check: false
+    config:
+      prompt_template: "custom_init_prompt"
+      max_tokens: 2000
+      output_format: "table"
+      table_columns:
+        - "序号"
+        - "任务子目标"
+        - "实现方式"
+        - "数据需求"
+        - "输出格式"
+        - "质量标准"
+        - "预估时间"
+        - "依赖关系"
+      
+  - name: "select_objectives"
+    template: "objective_selection"
+    description: "任务目标选择和优先级设定"
+    pause_for_approval: true
+    dod_check: false
+    config:
+      selection_method: "interactive"
+      supported_commands:
+        - "继续"  # 执行所有目标
+        - "默认顺序"  # 按重要性顺序
+        - "选择序号X,Y"  # 批量选择目标
+        - "跳过序号X,Y"  # 跳过指定目标
+        - "重新排序X,Y,Z"  # 重新设定优先级
+      objective_categories:
+        - "数据分析"
+        - "报告生成"
+        - "流程优化"
+        - "方案设计"
+        - "评估分析"
+        - "知识整理"
+      timeout: 3600
+      
+  - name: "data_source_setup"
+    template: "data_preparation"
+    description: "数据源拉取和预处理"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      data_sources: "{input_sources}"
+      preprocessing_steps:
+        - "数据格式标准化"
+        - "数据质量检查"
+        - "数据清洗过滤"
+        - "数据结构转换"
+        - "缺失值处理"
+      supported_formats:
+        - "json"
+        - "csv"
+        - "excel"
+        - "xml"
+        - "markdown"
+        - "text"
+      
+  - name: "analysis_strategy"
+    template: "ai_call"
+    description: "分析策略制定"
+    pause_for_approval: true
+    dod_check: true
+    config:
+      prompt_template: "custom_strategy_prompt"
+      max_tokens: 3000
+      selected_objectives: "{selected_objectives}"
+      strategy_components:
+        - "分析方法选择"
+        - "处理流程设计"
+        - "质量控制方案"
+        - "输出格式规划"
+        - "验证机制设定"
+      
+  - name: "primary_analysis"
+    template: "ai_call"
+    description: "主要分析执行"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      prompt_template: "custom_analysis_prompt"
+      max_tokens: 6000
+      analysis_depth: "{complexity_level}"
+      data_input: "{preprocessed_data}"
+      analysis_methods:
+        - "定量分析"
+        - "定性分析"
+        - "比较分析"
+        - "趋势分析"
+        - "关联分析"
+      
+  - name: "insight_generation"
+    template: "ai_call"
+    description: "洞察和发现生成"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      prompt_template: "custom_insight_prompt"
+      max_tokens: 4000
+      insight_types:
+        - "关键发现"
+        - "模式识别"
+        - "异常检测"
+        - "机会识别"
+        - "风险预警"
+      
+  - name: "recommendation_generation"
+    template: "ai_call"
+    description: "建议和方案生成"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      prompt_template: "custom_recommendation_prompt"
+      max_tokens: 4000
+      recommendation_types:
+        - "改进建议"
+        - "优化方案"
+        - "实施计划"
+        - "风险缓解"
+        - "后续行动"
+      
+  - name: "content_structuring"
+    template: "ai_call"
+    description: "内容结构化和组织"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      prompt_template: "custom_structure_prompt"
+      max_tokens: 3000
+      structure_formats:
+        - "执行摘要"
+        - "详细分析"
+        - "图表可视化"
+        - "附录资料"
+        - "行动清单"
+      
+  - name: "multi_format_generation"
+    template: "format_generator"
+    description: "多格式输出生成"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      source_content: "{structured_content}"
+      target_formats: "{output_formats}"
+      format_configs:
+        markdown:
+          template: "custom_markdown_template"
+          include_toc: true
+          include_charts: true
+        excel:
+          template: "custom_excel_template"
+          sheets:
+            - "摘要"
+            - "详细数据"
+            - "图表"
+            - "建议"
+        powerpoint:
+          template: "custom_ppt_template"
+          slide_types:
+            - "标题页"
+            - "摘要页"
+            - "分析页"
+            - "图表页"
+            - "建议页"
+      
+  - name: "quality_review"
+    template: "ai_call"
+    description: "质量审查和优化"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      prompt_template: "custom_quality_prompt"
+      max_tokens: 3000
+      review_criteria:
+        - "内容准确性"
+        - "逻辑一致性"
+        - "表达清晰度"
+        - "实用性价值"
+        - "完整性检查"
+      
+  - name: "approval_before_delivery"
+    template: "human_approval"
+    description: "交付前人工审批"
+    pause_for_approval: true
+    dod_check: false
+    config:
+      timeout: 7200  # 2小时
+      message: "自定义任务已完成，请审查后确认是否交付"
+      approval_method: "command_line"
+      preview_formats: "{output_formats}"
+      
+  - name: "package_deliverables"
+    template: "package_manager"
+    description: "打包交付物"
+    pause_for_approval: false
+    dod_check: false
+    config:
+      package_format: "zip"
+      include_files:
+        - "主要输出文件"
+        - "数据源文件"
+        - "处理日志"
+        - "质量报告"
+      metadata:
+        - "任务描述"
+        - "创建时间"
+        - "输出格式"
+        - "数据来源"
+      
+  - name: "deliver_results"
+    template: "file_operation"
+    description: "交付结果"
+    pause_for_approval: false
+    dod_check: false
+    config:
+      operation: "deliver"
+      output_path: "{custom_output_path}"
+      delivery_method: "file_system"
+      
+  - name: "notify_completion"
+    template: "notification"
+    description: "完成通知"
+    pause_for_approval: false
+    dod_check: false
+    config:
+      notification_type: "custom_task_completed"
+      recipients: "{stakeholders}"
+      include_summary: true
+      include_deliverables_info: true
+      
+  - name: "finalize"
+    template: "ai_call"
+    description: "自定义任务完成总结"
+    pause_for_approval: false
+    dod_check: false
+    config:
+      prompt_template: "custom_finalize_prompt"
+      max_tokens: 1000
+
+# 任务复杂度配置
+complexity_levels:
+  low:
+    max_iterations: 2
+    analysis_depth: "basic"
+    output_detail: "summary"
+    ai_calls_limit: 5
+    
+  medium:
+    max_iterations: 3
+    analysis_depth: "detailed"
+    output_detail: "comprehensive"
+    ai_calls_limit: 8
+    
+  high:
+    max_iterations: 5
+    analysis_depth: "deep"
+    output_detail: "exhaustive"
+    ai_calls_limit: 12
+
+# 输出格式配置
+output_formats:
+  markdown:
+    template: "custom_markdown_template"
+    features:
+      - "目录生成"
+      - "图表嵌入"
+      - "代码高亮"
+      - "链接支持"
+    
+  excel:
+    template: "custom_excel_template"
+    features:
+      - "多工作表"
+      - "图表生成"
+      - "数据透视表"
+      - "格式美化"
+    
+  powerpoint:
+    template: "custom_ppt_template"
+    features:
+      - "模板应用"
+      - "图表插入"
+      - "动画效果"
+      - "演示脚本"
+    
+  pdf:
+    template: "custom_pdf_template"
+    features:
+      - "专业排版"
+      - "书签导航"
+      - "页眉页脚"
+      - "水印添加"
+
+# 可配置的DoD规则
+dod_rules:
+  configurable: true
+  default_rules:
+    data_preprocessing:
+      - "数据完整性 >= 95%"
+      - "数据质量评分 >= 8.0"
+      - "格式标准化率 = 100%"
+    analysis_execution:
+      - "分析覆盖率 >= 90%"
+      - "关键发现识别完整"
+      - "洞察质量评分 >= 8.0"
+    content_generation:
+      - "内容逻辑一致性检查通过"
+      - "建议可操作性 >= 85%"
+      - "表达清晰度评分 >= 8.5"
+    format_conversion:
+      - "格式转换成功率 = 100%"
+      - "视觉效果质量 >= 8.0"
+      - "用户友好性评分 >= 8.0"
+    quality_assurance:
+      - "质量检查项目覆盖率 = 100%"
+      - "内容准确性 >= 95%"
+      - "交付标准符合率 = 100%"

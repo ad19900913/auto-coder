@@ -224,6 +224,48 @@ def run_task(ctx, task_id):
 @cli.command()
 @click.argument('task_id')
 @click.pass_context
+def execute_workflow(ctx, task_id):
+    """使用工作流引擎执行指定任务"""
+    try:
+        click.echo(f"🚀 使用工作流引擎执行任务: {task_id}")
+        
+        # 初始化组件
+        config_manager = ConfigManager(ctx.obj['config_dir'])
+        state_manager = StateManager()
+        notify_service = NotifyService(config_manager)
+        task_manager = TaskManager(
+            config_manager=config_manager,
+            state_manager=state_manager,
+            notify_service=notify_service
+        )
+        
+        # 检查任务是否存在
+        task_config = config_manager.get_task_config(task_id)
+        if not task_config:
+            click.echo(f"❌ 任务配置不存在: {task_id}", err=True)
+            sys.exit(1)
+        
+        # 检查任务是否已在运行
+        if task_id in task_manager.get_running_tasks():
+            click.echo(f"⚠️ 任务已在运行中: {task_id}", err=True)
+            sys.exit(1)
+        
+        # 执行工作流任务
+        if task_manager.execute_task_with_workflow(task_id):
+            click.echo(f"✅ 工作流任务已提交执行: {task_id}")
+            click.echo("💡 使用 'task-status' 命令查看执行状态")
+        else:
+            click.echo(f"❌ 工作流任务执行失败: {task_id}", err=True)
+            sys.exit(1)
+        
+    except Exception as e:
+        click.echo(f"❌ 执行工作流任务失败: {e}", err=True)
+        sys.exit(1)
+
+
+@cli.command()
+@click.argument('task_id')
+@click.pass_context
 def stop_task(ctx, task_id):
     """停止指定任务"""
     try:

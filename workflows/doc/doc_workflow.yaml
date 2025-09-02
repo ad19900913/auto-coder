@@ -1,0 +1,283 @@
+# Doc任务工作流模板
+name: "doc_workflow"
+version: "1.0"
+description: "文档生成任务专用工作流，支持多种文档类型和格式"
+extends: "base_workflow"
+
+# 文档任务特定配置
+doc_specific:
+  multi_format_support: true  # 多格式支持
+  template_driven: true  # 模板驱动
+  version_control: true  # 版本控制
+  collaborative_editing: true  # 协作编辑
+  auto_diagram_generation: true  # 自动图表生成
+
+# 完整步骤序列
+steps_sequence:
+  - name: "init"
+    template: "ai_call"
+    description: "文档需求分析和结构规划"
+    pause_for_approval: false
+    dod_check: false
+    config:
+      prompt_template: "doc_init_prompt"
+      max_tokens: 2000
+      output_format: "table"
+      table_columns:
+        - "序号"
+        - "文档章节"
+        - "内容类型"
+        - "详细程度"
+        - "预估页数"
+        - "数据来源"
+        - "优先级"
+        - "依赖关系"
+      
+  - name: "select_sections"
+    template: "section_selection"
+    description: "文档章节选择"
+    pause_for_approval: true
+    dod_check: false
+    config:
+      selection_method: "interactive"
+      supported_commands:
+        - "继续"  # 生成所有章节
+        - "默认顺序"  # 按逻辑顺序生成
+        - "选择序号X,Y"  # 批量选择章节
+        - "跳过序号X,Y"  # 跳过指定章节
+      section_types:
+        - "概述说明"
+        - "技术规范"
+        - "API文档"
+        - "用户指南"
+        - "操作手册"
+        - "架构设计"
+      timeout: 3600
+      
+  - name: "data_collection"
+    template: "data_gathering"
+    description: "数据收集和预处理"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      data_sources:
+        - "代码库分析"
+        - "配置文件扫描"
+        - "API接口提取"
+        - "数据库结构"
+        - "现有文档整理"
+      collection_methods:
+        - "静态分析"
+        - "动态扫描"
+        - "文件解析"
+        - "Git历史分析"
+      
+  - name: "outline_generation"
+    template: "ai_call"
+    description: "文档大纲生成"
+    pause_for_approval: true
+    dod_check: true
+    config:
+      prompt_template: "doc_outline_prompt"
+      max_tokens: 3000
+      selected_sections: "{selected_sections}"
+      outline_format: "hierarchical"
+      
+  - name: "content_generation"
+    template: "ai_call"
+    description: "文档内容生成"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      prompt_template: "doc_content_prompt"
+      max_tokens: 8000
+      generation_mode: "section_by_section"
+      include_examples: true
+      include_diagrams: true
+      
+  - name: "diagram_generation"
+    template: "ai_call"
+    description: "图表和图形生成"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      prompt_template: "doc_diagram_prompt"
+      max_tokens: 3000
+      diagram_types:
+        - "架构图"
+        - "流程图"
+        - "时序图"
+        - "类图"
+        - "部署图"
+      format: "mermaid"
+      
+  - name: "code_sample_generation"
+    template: "ai_call"
+    description: "代码示例生成"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      prompt_template: "doc_code_sample_prompt"
+      max_tokens: 4000
+      sample_types:
+        - "API调用示例"
+        - "配置示例"
+        - "使用案例"
+        - "集成示例"
+      languages:
+        - "java"
+        - "python"
+        - "javascript"
+        - "curl"
+        - "yaml"
+      
+  - name: "review_and_optimize"
+    template: "ai_call"
+    description: "文档审查和优化"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      prompt_template: "doc_review_prompt"
+      max_tokens: 3000
+      review_aspects:
+        - "内容完整性"
+        - "逻辑一致性"
+        - "表达清晰度"
+        - "格式规范性"
+        - "用户友好性"
+      
+  - name: "format_conversion"
+    template: "format_processor"
+    description: "格式转换和美化"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      source_format: "markdown"
+      target_formats:
+        - "pdf"
+        - "html"
+        - "docx"
+        - "confluence"
+      formatting_options:
+        - "目录生成"
+        - "页码添加"
+        - "图表美化"
+        - "代码高亮"
+      
+  - name: "approval_before_publish"
+    template: "human_approval"
+    description: "文档发布前人工审批"
+    pause_for_approval: true
+    dod_check: false
+    config:
+      timeout: 7200  # 2小时
+      message: "文档已生成完成，请审查后确认是否发布"
+      approval_method: "command_line"
+      preview_available: true
+      
+  - name: "publish_document"
+    template: "file_operation"
+    description: "发布文档"
+    pause_for_approval: false
+    dod_check: false
+    config:
+      operation: "publish"
+      output_path: "{doc_output_path}"
+      formats: "{target_formats}"
+      version_control: true
+      
+  - name: "update_index"
+    template: "index_manager"
+    description: "更新文档索引"
+    pause_for_approval: false
+    dod_check: false
+    config:
+      index_type: "documentation_catalog"
+      metadata:
+        - "文档类型"
+        - "创建时间"
+        - "版本信息"
+        - "标签分类"
+      
+  - name: "notify_stakeholders"
+    template: "notification"
+    description: "通知相关人员"
+    pause_for_approval: false
+    dod_check: false
+    config:
+      notification_type: "document_published"
+      recipients: "{stakeholders}"
+      include_summary: true
+      include_preview_link: true
+      
+  - name: "finalize"
+    template: "ai_call"
+    description: "文档任务完成总结"
+    pause_for_approval: false
+    dod_check: false
+    config:
+      prompt_template: "doc_finalize_prompt"
+      max_tokens: 1000
+
+# 文档类型配置
+document_types:
+  api_documentation:
+    template: "api_doc_template"
+    required_sections:
+      - "API概述"
+      - "认证机制"
+      - "接口列表"
+      - "错误码说明"
+      - "SDK示例"
+    
+  user_manual:
+    template: "user_manual_template"
+    required_sections:
+      - "产品介绍"
+      - "快速开始"
+      - "功能详解"
+      - "常见问题"
+      - "故障排除"
+    
+  technical_specification:
+    template: "tech_spec_template"
+    required_sections:
+      - "技术架构"
+      - "系统要求"
+      - "接口规范"
+      - "数据模型"
+      - "部署指南"
+    
+  operation_guide:
+    template: "ops_guide_template"
+    required_sections:
+      - "环境准备"
+      - "安装部署"
+      - "配置管理"
+      - "监控运维"
+      - "应急处理"
+
+# 可配置的DoD规则
+dod_rules:
+  configurable: true
+  default_rules:
+    data_collection:
+      - "数据完整性检查通过"
+      - "数据源有效性确认"
+      - "关键信息覆盖率 >= 90%"
+    outline_generation:
+      - "大纲逻辑结构清晰"
+      - "章节完整性确认"
+      - "内容层次合理"
+    content_generation:
+      - "内容准确性检查通过"
+      - "示例代码可执行"
+      - "图表信息准确"
+    diagram_generation:
+      - "图表语法正确"
+      - "图表信息完整"
+      - "视觉效果清晰"
+    format_conversion:
+      - "格式转换成功"
+      - "排版效果良好"
+      - "链接引用正确"

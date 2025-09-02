@@ -346,6 +346,46 @@ class TaskManager:
             self.logger.error(f"立即执行任务失败 {task_id}: {e}")
             return False
     
+    def execute_task_with_workflow(self, task_id: str) -> bool:
+        """
+        使用工作流引擎执行指定任务
+        
+        Args:
+            task_id: 任务ID
+            
+        Returns:
+            是否成功提交执行
+        """
+        try:
+            # 检查任务是否存在
+            task_config = self.config_manager.get_task_config(task_id)
+            if not task_config:
+                self.logger.error(f"任务配置不存在: {task_id}")
+                return False
+            
+            # 检查任务是否已在运行
+            if task_id in self.running_tasks:
+                self.logger.warning(f"任务已在运行中: {task_id}")
+                return False
+            
+            # 创建任务执行器
+            executor = self.executor_factory.create_executor(task_id)
+            
+            # 提交工作流任务到线程池
+            future = self.executor_pool.submit(self._execute_workflow_task_safe, executor)
+            
+            # 记录任务状态
+            with self._lock:
+                self.running_tasks[task_id] = executor
+                self.task_futures[task_id] = future
+            
+            self.logger.info(f"工作流任务已提交立即执行: {task_id}")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"立即执行工作流任务失败 {task_id}: {e}")
+            return False
+    
     def stop_task(self, task_id: str) -> bool:
         """
         停止指定任务
@@ -476,3 +516,31 @@ class TaskManager:
     def is_running(self) -> bool:
         """检查任务管理器是否正在运行"""
         return not self._stop_flag and self.scheduler.is_running()
+    
+    def _execute_workflow_task_safe(self, executor):
+        """
+        安全执行工作流任务
+        
+        Args:
+            executor: 任务执行器
+        """
+        try:
+            # 导入asyncio
+            import asyncio
+            
+            # 创建新的事件循环
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            
+            try:
+                # 执行工作流任务
+                result = loop.run_until_complete(executor.execute_with_workflow())
+                self.logger.info(f"工作流任务执行完成: {executor.task_id}")
+                return result
+            finally:
+                # 关闭事件循环
+                loop.close()
+                
+        except Exception as e:
+            self.logger.error(f"工作流任务执行失败 {executor.task_id}: {e}")
+            raise

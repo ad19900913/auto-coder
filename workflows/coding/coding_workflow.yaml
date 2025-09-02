@@ -1,0 +1,190 @@
+# 编码任务工作流模板
+name: "coding_workflow"
+version: "1.0"
+description: "编码任务专用工作流，支持功能点分解、选择、验证表格输出"
+extends: "base_workflow"
+
+# 编码任务特定配置
+coding_specific:
+  branch_management: true
+  code_review_integration: true
+  testing_required: true
+  security_scanning: true
+  feature_decomposition: true  # 功能点分解
+  collaboration_enabled: true  # 协作机制
+
+# 完整步骤序列
+steps_sequence:
+  - name: "init"
+    template: "ai_call"
+    description: "需求分析和功能点分解"
+    pause_for_approval: false
+    dod_check: false
+    config:
+      prompt_template: "coding_init_prompt"
+      max_tokens: 2000
+      output_format: "table"
+      table_columns:
+        - "序号"
+        - "接口/模块/文件/类"
+        - "新增/修改"
+        - "变更点"
+        - "影响范围"
+        - "兼容性说明"
+        - "风险/注意事项"
+        - "测试点"
+      
+  - name: "select_features"
+    template: "feature_selection"
+    description: "功能点选择"
+    pause_for_approval: true
+    dod_check: false
+    config:
+      selection_method: "interactive"
+      supported_commands:
+        - "继续"
+        - "默认顺序"
+        - "选择序号X,Y"
+        - "跳过序号X,Y"
+      timeout: 3600
+      
+  - name: "plan"
+    template: "ai_call"
+    description: "生成实现计划"
+    pause_for_approval: true
+    dod_check: true
+    config:
+      prompt_template: "coding_plan_prompt"
+      selected_features: "{selected_features}"  # 从上一步获取
+      
+  - name: "implement"
+    template: "ai_call"
+    description: "代码实现"
+    pause_for_approval: false
+    dod_check: false
+    config:
+      prompt_template: "coding_implement_prompt"
+      max_tokens: 4000
+      selected_features: "{selected_features}"
+      
+  - name: "test"
+    template: "script_execution"
+    description: "单元测试执行"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      command: "npm test"
+      working_dir: "{project_path}"
+      timeout: 300
+      allowed_commands: ["npm", "mvn", "pytest", "go test"]
+      
+  - name: "build"
+    template: "script_execution"
+    description: "项目构建"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      command: "npm run build"
+      working_dir: "{project_path}"
+      timeout: 600
+      allowed_commands: ["npm", "mvn", "gradle", "make"]
+      
+  - name: "security_scan"
+    template: "script_execution"
+    description: "安全扫描"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      command: "npm audit"
+      working_dir: "{project_path}"
+      timeout: 180
+      allowed_commands: ["npm audit", "mvn dependency:check", "snyk test"]
+      
+  - name: "code_review"
+    template: "ai_call"
+    description: "代码质量审查"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      prompt_template: "coding_review_prompt"
+      max_tokens: 3000
+      output_format: "table"
+      table_columns:
+        - "文件"
+        - "类/函数"
+        - "修改点"
+        - "兼容性"
+        - "风险"
+        - "测试点"
+      
+  - name: "commit"
+    template: "git_operation"
+    description: "代码提交"
+    pause_for_approval: false
+    dod_check: false
+    config:
+      operation: "commit"
+      message_template: "feat: {task_description}\n\nTask: {task_id}\nTime: {timestamp}"
+      
+  - name: "approval_before_pr"
+    template: "human_approval"
+    description: "PR创建前人工审批"
+    pause_for_approval: true
+    dod_check: false
+    config:
+      timeout: 7200
+      message: "代码已提交，请审查后确认是否创建PR"
+      approval_method: "command_line"
+      
+  - name: "create_pr"
+    template: "git_operation"
+    description: "创建Pull Request"
+    pause_for_approval: false
+    dod_check: false
+    config:
+      operation: "create_pr"
+      title_template: "feat: {task_description}"
+      body_template: "AI生成的代码实现\n\nTask: {task_id}\nTime: {timestamp}"
+      
+  - name: "trigger_review"
+    template: "task_trigger"
+    description: "触发Review任务"
+    pause_for_approval: false
+    dod_check: false
+    config:
+      target_task_type: "review"
+      shared_artifacts:
+        - "code_changes"
+        - "commit_records"
+        - "implementation_plan"
+        - "test_results"
+      
+  - name: "finalize"
+    template: "ai_call"
+    description: "任务完成总结"
+    pause_for_approval: false
+    dod_check: false
+    config:
+      prompt_template: "coding_finalize_prompt"
+      max_tokens: 1000
+
+# 可配置的DoD规则
+dod_rules:
+  configurable: true
+  default_rules:
+    test:
+      - "单元测试通过率 >= 80%"
+      - "测试覆盖率 >= 70%"
+      - "无测试失败"
+    build:
+      - "项目构建成功"
+      - "无编译错误"
+      - "无依赖冲突"
+    security:
+      - "安全扫描通过"
+      - "无高危漏洞"
+      - "依赖包安全"
+    code_quality:
+      - "代码规范检查通过"
+      - "无严重代码异味"
+      - "复杂度在合理范围内"

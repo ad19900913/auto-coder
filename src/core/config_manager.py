@@ -8,6 +8,7 @@ import logging
 from pathlib import Path
 from typing import Dict, Any, Optional, List
 from datetime import datetime
+from .config_validator import ConfigValidator
 
 
 class ConfigManager:
@@ -25,6 +26,9 @@ class ConfigManager:
         self.coding_standards = {}
         self.task_configs = {}
         self.logger = logging.getLogger(__name__)
+        
+        # 创建配置验证器
+        self.validator = ConfigValidator()
         
         # 加载配置
         self._load_configs()
@@ -61,6 +65,15 @@ class ConfigManager:
             
             # 处理环境变量
             self._process_environment_variables()
+            
+            # 验证配置
+            if not self.validator.validate_global_config(self.global_config):
+                errors = self.validator.get_errors()
+                warnings = self.validator.get_warnings()
+                if errors:
+                    self.logger.error(f"全局配置验证失败: {errors}")
+                if warnings:
+                    self.logger.warning(f"全局配置警告: {warnings}")
             
             self.logger.info("全局配置加载成功")
         except Exception as e:
@@ -107,6 +120,16 @@ class ConfigManager:
                 with open(task_file, 'r', encoding='utf-8') as f:
                     task_config = yaml.safe_load(f)
                     task_name = task_file.stem
+                    
+                    # 验证任务配置
+                    if not self.validator.validate_task_config(task_name, task_config):
+                        errors = self.validator.get_errors()
+                        warnings = self.validator.get_warnings()
+                        if errors:
+                            self.logger.error(f"任务配置验证失败 {task_name}: {errors}")
+                        if warnings:
+                            self.logger.warning(f"任务配置警告 {task_name}: {warnings}")
+                    
                     self.task_configs[task_name] = task_config
                 self.logger.info(f"任务配置加载成功: {task_name}")
             except Exception as e:

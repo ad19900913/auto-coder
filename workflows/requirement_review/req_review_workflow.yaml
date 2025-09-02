@@ -1,0 +1,331 @@
+# Requirement Review任务工作流模板
+name: "requirement_review_workflow"
+version: "1.0"
+description: "需求评审任务专用工作流，支持需求文档与代码实现的一致性分析"
+extends: "base_workflow"
+
+# 需求评审任务特定配置
+req_review_specific:
+  document_analysis: true  # 需求文档分析
+  code_analysis: true  # 代码实现分析
+  consistency_check: true  # 一致性检查
+  gap_analysis: true  # 差距分析
+  risk_assessment: true  # 风险评估
+
+# 完整步骤序列
+steps_sequence:
+  - name: "init"
+    template: "ai_call"
+    description: "需求评审初始化和范围分析"
+    pause_for_approval: false
+    dod_check: false
+    config:
+      prompt_template: "req_review_init_prompt"
+      max_tokens: 2000
+      output_format: "table"
+      table_columns:
+        - "序号"
+        - "评审维度"
+        - "评审内容"
+        - "评审方法"
+        - "预估时间"
+        - "关键指标"
+        - "风险等级"
+        - "验收标准"
+      
+  - name: "select_dimensions"
+    template: "dimension_selection"
+    description: "评审维度选择"
+    pause_for_approval: true
+    dod_check: false
+    config:
+      selection_method: "interactive"
+      supported_commands:
+        - "继续"  # 选择所有维度
+        - "默认顺序"  # 按重要性顺序
+        - "选择序号X,Y"  # 批量选择维度
+        - "跳过序号X,Y"  # 跳过指定维度
+      review_dimensions:
+        - "架构一致性"
+        - "接口匹配性"
+        - "数据模型一致性"
+        - "功能完整性"
+        - "性能需求匹配"
+        - "安全需求实现"
+      timeout: 3600
+      
+  - name: "requirement_analysis"
+    template: "ai_call"
+    description: "需求文档分析"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      prompt_template: "req_analysis_prompt"
+      max_tokens: 5000
+      document_sources: "{requirement_documents}"
+      analysis_aspects:
+        - "功能需求提取"
+        - "非功能需求识别"
+        - "接口需求分析"
+        - "数据需求分析"
+        - "约束条件梳理"
+        - "验收条件提取"
+      
+  - name: "code_scope_analysis"
+    template: "ai_call"
+    description: "代码范围分析"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      prompt_template: "code_scope_analysis_prompt"
+      max_tokens: 4000
+      code_sources: "{code_paths}"
+      analysis_scope:
+        - "项目结构分析"
+        - "模块划分识别"
+        - "接口定义提取"
+        - "数据模型识别"
+        - "配置文件分析"
+      
+  - name: "architecture_consistency"
+    template: "ai_call"
+    description: "架构一致性评审"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      prompt_template: "architecture_consistency_prompt"
+      max_tokens: 4000
+      comparison_aspects:
+        - "系统架构对比"
+        - "模块划分一致性"
+        - "组件依赖关系"
+        - "技术栈匹配性"
+        - "设计模式应用"
+      
+  - name: "interface_matching"
+    template: "ai_call"
+    description: "接口匹配性评审"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      prompt_template: "interface_matching_prompt"
+      max_tokens: 4000
+      matching_checks:
+        - "API接口对比"
+        - "参数结构匹配"
+        - "返回格式一致性"
+        - "错误处理机制"
+        - "认证授权方式"
+      
+  - name: "data_model_consistency"
+    template: "ai_call"
+    description: "数据模型一致性评审"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      prompt_template: "data_model_consistency_prompt"
+      max_tokens: 3500
+      data_aspects:
+        - "数据实体对比"
+        - "字段定义匹配"
+        - "关系约束检查"
+        - "数据流一致性"
+        - "存储方案匹配"
+      
+  - name: "functional_completeness"
+    template: "ai_call"
+    description: "功能完整性评审"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      prompt_template: "functional_completeness_prompt"
+      max_tokens: 4000
+      completeness_checks:
+        - "核心功能覆盖"
+        - "边界场景处理"
+        - "异常情况处理"
+        - "业务规则实现"
+        - "用户体验一致性"
+      
+  - name: "performance_requirements"
+    template: "ai_call"
+    description: "性能需求匹配评审"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      prompt_template: "performance_requirements_prompt"
+      max_tokens: 3000
+      performance_aspects:
+        - "响应时间要求"
+        - "并发处理能力"
+        - "吞吐量指标"
+        - "资源使用限制"
+        - "扩展性设计"
+      
+  - name: "security_requirements"
+    template: "ai_call"
+    description: "安全需求实现评审"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      prompt_template: "security_requirements_prompt"
+      max_tokens: 3000
+      security_aspects:
+        - "认证机制实现"
+        - "授权控制方式"
+        - "数据加密处理"
+        - "安全防护措施"
+        - "合规性要求"
+      
+  - name: "gap_analysis"
+    template: "ai_call"
+    description: "差距分析和风险评估"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      prompt_template: "gap_analysis_prompt"
+      max_tokens: 4000
+      analysis_outputs:
+        - "需求实现差距"
+        - "功能缺失分析"
+        - "设计偏差识别"
+        - "风险等级评估"
+        - "改进建议"
+      
+  - name: "generate_report"
+    template: "ai_call"
+    description: "生成评审报告"
+    pause_for_approval: false
+    dod_check: true
+    config:
+      prompt_template: "req_review_report_prompt"
+      max_tokens: 6000
+      output_format: "markdown"
+      report_sections:
+        - "评审摘要"
+        - "一致性分析"
+        - "差距识别"
+        - "风险评估"
+        - "改进建议"
+        - "后续行动"
+      
+  - name: "approval_before_publish"
+    template: "human_approval"
+    description: "报告发布前人工审批"
+    pause_for_approval: true
+    dod_check: false
+    config:
+      timeout: 3600
+      message: "需求评审报告已生成，请审查后确认是否发布"
+      approval_method: "command_line"
+      
+  - name: "publish_report"
+    template: "file_operation"
+    description: "发布评审报告"
+    pause_for_approval: false
+    dod_check: false
+    config:
+      operation: "publish"
+      output_path: "{req_review_output_path}"
+      format: "markdown"
+      
+  - name: "notify_stakeholders"
+    template: "notification"
+    description: "通知相关人员"
+    pause_for_approval: false
+    dod_check: false
+    config:
+      notification_type: "requirement_review_completed"
+      recipients: "{stakeholders}"
+      include_summary: true
+      priority: "high"
+      
+  - name: "finalize"
+    template: "ai_call"
+    description: "需求评审任务完成总结"
+    pause_for_approval: false
+    dod_check: false
+    config:
+      prompt_template: "req_review_finalize_prompt"
+      max_tokens: 1000
+
+# 评审维度配置
+review_dimensions:
+  architecture:
+    weight: 25
+    critical: true
+    aspects:
+      - "系统架构"
+      - "模块设计"
+      - "技术选型"
+      - "集成方案"
+    
+  interface:
+    weight: 20
+    critical: true
+    aspects:
+      - "API设计"
+      - "数据格式"
+      - "协议规范"
+      - "版本兼容"
+    
+  data_model:
+    weight: 20
+    critical: true
+    aspects:
+      - "数据结构"
+      - "关系设计"
+      - "约束规则"
+      - "存储方案"
+    
+  functionality:
+    weight: 20
+    critical: true
+    aspects:
+      - "功能覆盖"
+      - "业务逻辑"
+      - "用户体验"
+      - "边界处理"
+    
+  performance:
+    weight: 10
+    critical: false
+    aspects:
+      - "性能指标"
+      - "扩展性"
+      - "稳定性"
+      - "可用性"
+    
+  security:
+    weight: 5
+    critical: false
+    aspects:
+      - "安全防护"
+      - "权限控制"
+      - "数据保护"
+      - "合规要求"
+
+# 可配置的DoD规则
+dod_rules:
+  configurable: true
+  default_rules:
+    requirement_analysis:
+      - "需求提取完整性 >= 95%"
+      - "需求分类准确性 >= 90%"
+      - "关键需求识别率 = 100%"
+    code_analysis:
+      - "代码覆盖率 >= 80%"
+      - "关键模块分析完整"
+      - "接口识别准确性 >= 95%"
+    consistency_check:
+      - "一致性匹配度 >= 85%"
+      - "关键差异识别完整"
+      - "风险评估准确性 >= 90%"
+    gap_analysis:
+      - "差距识别完整性 >= 90%"
+      - "改进建议可执行性 >= 80%"
+      - "风险等级评估准确"
+    report_generation:
+      - "报告内容完整性 = 100%"
+      - "结论支撑充分性 >= 90%"
+      - "建议具体可操作性 >= 85%"

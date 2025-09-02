@@ -12,9 +12,11 @@ from pathlib import Path
 
 from .state_manager import StateManager, TaskStatus
 from .config_manager import ConfigManager
+from .workflow_engine import WorkflowEngine, WorkflowMode
 from ..services.notify_service import NotifyService
 from ..services.ai_service import AIService
 from ..services.git_service import GitService
+from ..services.service_factory import ServiceFactory
 
 
 class TaskExecutor(ABC):
@@ -48,10 +50,16 @@ class TaskExecutor(ABC):
         self.ai_service = None
         self.git_service = None
         
+        # 初始化工作流引擎
+        self.workflow_engine = WorkflowEngine(config_manager)
+        
         # 任务执行状态
         self.start_time = None
         self.end_time = None
         self.execution_result = {}
+        
+        # 创建服务工厂
+        self.service_factory = ServiceFactory(config_manager)
         
         # 初始化服务
         self._init_services()
@@ -59,33 +67,13 @@ class TaskExecutor(ABC):
     def _init_services(self):
         """初始化AI和Git服务"""
         try:
-            # 初始化AI服务
-            ai_config = self.task_config.get('ai', {})
-            ai_provider = ai_config.get('provider', 'claude')
+            # 使用服务工厂创建服务实例
+            services = self.service_factory.create_services_for_task(self.task_config)
             
-            if ai_provider == 'claude':
-                from ..services.ai_service import ClaudeService
-                self.ai_service = ClaudeService(self.config_manager)
-            elif ai_provider == 'deepseek':
-                from ..services.ai_service import DeepSeekService
-                self.ai_service = DeepSeekService(self.config_manager)
-            else:
-                raise ValueError(f"不支持的AI服务提供商: {ai_provider}")
+            self.ai_service = services['ai_service']
+            self.git_service = services['git_service']
             
-            # 初始化Git服务
-            git_config = self.task_config.get('git', {})
-            git_platform = git_config.get('platform', 'github')
-            
-            if git_platform == 'github':
-                from ..services.git_service import GitHubService
-                self.git_service = GitHubService(self.config_manager)
-            elif git_platform == 'gitlab':
-                from ..services.git_service import GitLabService
-                self.git_service = GitLabService(self.config_manager)
-            else:
-                raise ValueError(f"不支持的Git平台: {git_platform}")
-            
-            self.logger.info(f"服务初始化成功: AI={ai_provider}, Git={git_platform}")
+            self.logger.info("服务初始化成功")
             
         except Exception as e:
             self.logger.error(f"服务初始化失败: {e}")
@@ -294,6 +282,37 @@ class TaskExecutor(ABC):
         Returns:
             输出文件路径
         """
+    
+    async def execute_with_workflow(self) -> Dict[str, Any]:
+        """
+        使用工作流引擎执行任务
+        
+        Returns:
+            执行结果字典
+        """
+        try:
+            # 开始执行
+            self._pre_execute()
+            
+            # 获取任务类型
+            task_type = self.task_config.get('type', 'unknown')
+            
+            # 使用工作流引擎执行
+            result = await self.workflow_engine.execute_workflow(
+                task_id=self.task_id,
+                task_type=task_type,
+                task_config=self.task_config
+            )
+            
+            # 执行后处理
+            self._post_execute(result)
+            
+            return result
+            
+        except Exception as e:
+            # 异常处理
+            self._handle_execution_error(e)
+            raise
         try:
             # 获取输出目录配置
             output_config = self.config_manager.get_system_config().get('outputs', {})

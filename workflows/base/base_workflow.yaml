@@ -1,0 +1,352 @@
+# 基础工作流模板
+name: "base_workflow"
+version: "1.0"
+description: "基础工作流模板，定义通用步骤和配置"
+
+# 全局配置
+global_config:
+  default_mode: "auto"  # auto/manual
+  shortcuts_enabled: true  # 仅manual模式有效
+  default_timeout: 3600  # 默认超时时间（秒）
+  artifact_naming: "{task_id}/{timestamp}/{step_name}"
+  notification_strategy: "errors_and_critical"  # 仅错误和关键节点通知
+
+# 运行模式配置
+execution_modes:
+  auto:
+    description: "自动化模式，全程无需人工干预"
+    interaction: false
+    pause_only_on: ["human_approval"]
+    shortcuts_enabled: false
+    
+  manual:
+    description: "人工审批模式，支持交互式确认"
+    interaction: true
+    pause_on_approval_steps: true
+    shortcuts_enabled: true
+    supported_commands:
+      - "继续"
+      - "默认顺序"
+      - "选择序号X,Y"
+      - "跳过序号X,Y"
+      - "重新执行"
+      - "终止任务"
+
+# 通用步骤模板
+step_templates:
+  ai_call:
+    type: "ai_service"
+    description: "AI服务调用"
+    required: true
+    configurable:
+      - model
+      - prompt_template
+      - max_tokens
+      - temperature
+      - top_p
+      - output_format
+    outputs:
+      - content: "ai_response"
+      - metadata: "ai_metadata"
+      - tokens_used: "token_count"
+    timeout: 300
+    retry_count: 3
+    
+  git_operation:
+    type: "git_service"
+    description: "Git操作"
+    required: false
+    configurable:
+      - operation
+      - branch
+      - message
+      - target_branch
+      - pr_title
+      - pr_body
+    outputs:
+      - status: "git_status"
+      - commit_id: "commit_hash"
+      - pr_url: "pull_request_url"
+    timeout: 600
+    retry_count: 2
+    
+  human_approval:
+    type: "pause"
+    description: "人工审批步骤"
+    required: false
+    configurable:
+      - timeout
+      - message
+      - approval_method
+      - required_approvers
+    outputs:
+      - approved: "approval_status"
+      - comment: "approval_comment"
+      - approver: "approver_id"
+    timeout: 7200  # 2小时默认
+    retry_count: 1
+    
+  script_execution:
+    type: "shell"
+    description: "脚本执行"
+    required: false
+    configurable:
+      - command
+      - working_dir
+      - timeout
+      - allowed_commands
+      - environment_vars
+    outputs:
+      - exit_code: "script_exit_code"
+      - output: "script_output"
+      - error: "script_error"
+    timeout: 1800  # 30分钟默认
+    retry_count: 2
+    security:
+      whitelist_enabled: true
+      working_dir_restriction: true
+    
+  dod_check:
+    type: "validation"
+    description: "DoD验证检查"
+    required: false
+    configurable:
+      - check_items
+      - severity
+      - auto_fix
+      - output_format
+    outputs:
+      - passed: "validation_result"
+      - issues: "validation_issues"
+      - score: "quality_score"
+    timeout: 180
+    retry_count: 1
+    
+  file_operation:
+    type: "file_system"
+    description: "文件操作"
+    required: false
+    configurable:
+      - operation
+      - source_path
+      - target_path
+      - format
+      - permissions
+    outputs:
+      - status: "operation_status"
+      - file_path: "output_path"
+      - file_size: "file_size"
+    timeout: 300
+    retry_count: 2
+    
+  notification:
+    type: "notify_service"
+    description: "通知发送"
+    required: false
+    configurable:
+      - notification_type
+      - recipients
+      - message_template
+      - priority
+      - channels
+    outputs:
+      - sent: "notification_sent"
+      - message_id: "notification_id"
+    timeout: 60
+    retry_count: 3
+    
+  task_trigger:
+    type: "task_manager"
+    description: "任务触发"
+    required: false
+    configurable:
+      - target_task_type
+      - shared_artifacts
+      - dependency_type
+      - trigger_condition
+    outputs:
+      - triggered: "trigger_status"
+      - task_id: "triggered_task_id"
+    timeout: 120
+    retry_count: 1
+
+# 默认步骤序列（最小工作流）
+default_steps:
+  - name: "init"
+    template: "ai_call"
+    description: "任务初始化"
+    pause_for_approval: false
+    dod_check: false
+    required: true
+    
+  - name: "execute"
+    template: "ai_call"
+    description: "主要执行"
+    pause_for_approval: false
+    dod_check: true
+    required: true
+    
+  - name: "validate"
+    template: "dod_check"
+    description: "结果验证"
+    pause_for_approval: false
+    dod_check: false
+    required: false
+    
+  - name: "finalize"
+    template: "ai_call"
+    description: "完成总结"
+    pause_for_approval: false
+    dod_check: false
+    required: true
+
+# 通知策略配置
+notification_config:
+  errors_and_critical:
+    notify_on:
+      - "step_error"
+      - "ai_call"
+      - "git_operation"
+      - "human_approval"
+      - "task_completion"
+      - "task_failure"
+    
+  all_steps:
+    notify_on:
+      - "step_start"
+      - "step_completion"
+      - "step_error"
+      - "step_skip"
+      - "task_completion"
+      - "task_failure"
+    
+  minimal:
+    notify_on:
+      - "task_completion"
+      - "task_failure"
+      - "critical_error"
+
+# 错误处理配置
+error_handling:
+  default_retry_strategy:
+    max_attempts: 3
+    backoff_multiplier: 2
+    initial_delay: 5
+    max_delay: 300
+    
+  step_failure_actions:
+    continue: "继续执行后续步骤"
+    abort: "终止整个工作流"
+    retry: "重试当前步骤"
+    skip: "跳过当前步骤"
+    
+  critical_steps:
+    - "init"
+    - "finalize"
+
+# 产物管理配置
+artifact_management:
+  naming_template: "{task_id}/{timestamp}/{step_name}"
+  retention_policy:
+    default_days: 30
+    important_artifacts_days: 90
+    cleanup_schedule: "0 2 * * *"  # 每天凌晨2点清理
+  
+  archival_rules:
+    compress_after_days: 7
+    archive_location: "./archives"
+    compression_format: "zip"
+
+# 质量控制配置
+quality_control:
+  default_dod_rules:
+    ai_call:
+      - "响应内容非空"
+      - "响应格式正确"
+      - "Token使用在限制内"
+    
+    git_operation:
+      - "操作执行成功"
+      - "无冲突产生"
+      - "权限验证通过"
+    
+    script_execution:
+      - "退出码为0"
+      - "无严重错误输出"
+      - "执行时间在限制内"
+    
+    file_operation:
+      - "文件操作成功"
+      - "文件完整性检查通过"
+      - "权限设置正确"
+
+# 安全配置
+security_config:
+  script_execution:
+    whitelist_commands:
+      - "npm"
+      - "mvn"
+      - "gradle"
+      - "python"
+      - "pytest"
+      - "go"
+      - "docker"
+    
+    forbidden_patterns:
+      - "rm -rf"
+      - "del /f"
+      - "format"
+      - "shutdown"
+      - "reboot"
+    
+    working_directory_restriction: true
+    environment_isolation: true
+  
+  file_access:
+    allowed_extensions:
+      - ".md"
+      - ".txt"
+      - ".json"
+      - ".yaml"
+      - ".yml"
+      - ".csv"
+      - ".xlsx"
+      - ".pdf"
+    
+    forbidden_paths:
+      - "/system"
+      - "/windows"
+      - "/etc"
+      - "~/.ssh"
+
+# 模板扩展机制
+extension_points:
+  pre_step_hooks:
+    - "logging"
+    - "security_check"
+    - "resource_check"
+  
+  post_step_hooks:
+    - "cleanup"
+    - "notification"
+    - "artifact_save"
+  
+  custom_validators:
+    - "business_rule_check"
+    - "compliance_check"
+    - "performance_check"
+
+# 继承机制配置
+inheritance:
+  override_strategy: "merge"  # merge, replace, append
+  
+  allowed_overrides:
+    - "steps_sequence"
+    - "dod_rules"
+    - "notification_config"
+    - "timeout_values"
+  
+  protected_elements:
+    - "security_config"
+    - "error_handling"
+    - "artifact_management"

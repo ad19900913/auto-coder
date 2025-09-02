@@ -10,6 +10,7 @@ __description__ = "自动化AI任务执行系统服务模块"
 from .notify_service import NotifyService, DingTalkNotifier
 from .ai_service import AIService, ClaudeService, DeepSeekService
 from .git_service import GitService, GitHubService, GitLabService
+from .service_factory import ServiceFactory
 
 __all__ = [
     'NotifyService',
@@ -19,5 +20,6 @@ __all__ = [
     'DeepSeekService',
     'GitService',
     'GitHubService',
-    'GitLabService'
+    'GitLabService',
+    'ServiceFactory'
 ]
