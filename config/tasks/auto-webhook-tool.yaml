@@ -11,7 +11,7 @@ workflow_mode: "automated"  # manual 或 automated
 # 任务调度配置
 schedule:
   type: "cron"
-  cron_expressions: ["37 20 * * *"]  # 18点20分执行（用于测试）
+  cron_expressions: ["13 21 * * *"]  # 18点20分执行（用于测试）
   timezone: "UTC+8"
 
 # 编码任务特定配置

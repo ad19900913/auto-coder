@@ -118,11 +118,47 @@ class GitHubService(GitService):
     def create_branch(self, repo_path: str, branch_name: str, base_branch: str = "main") -> bool:
         """创建新分支"""
         try:
-            repo = git.Repo(repo_path)
+            # 检查目录是否存在
+            if not os.path.exists(repo_path):
+                os.makedirs(repo_path, exist_ok=True)
+                self.logger.info(f"创建目录: {repo_path}")
             
-            # 切换到基础分支
-            repo.git.checkout(base_branch)
-            repo.git.pull()
+            # 检查是否为Git仓库
+            if not os.path.exists(os.path.join(repo_path, '.git')):
+                self.logger.info(f"初始化Git仓库: {repo_path}")
+                repo = git.Repo.init(repo_path)
+                
+                # 添加远程仓库（如果配置了repo_url）
+                # 这里可以添加远程仓库配置逻辑
+                
+                # 创建初始提交
+                try:
+                    # 创建一个README文件作为初始提交
+                    readme_path = os.path.join(repo_path, 'README.md')
+                    with open(readme_path, 'w', encoding='utf-8') as f:
+                        f.write(f"# {os.path.basename(repo_path)}\n\n自动生成的初始文件。")
+                    
+                    repo.index.add(['README.md'])
+                    repo.index.commit("Initial commit")
+                    self.logger.info("Git仓库初始化完成")
+                except Exception as e:
+                    self.logger.warning(f"创建初始提交失败: {e}")
+            else:
+                repo = git.Repo(repo_path)
+            
+            # 检查基础分支是否存在
+            try:
+                repo.git.checkout(base_branch)
+            except git.exc.GitCommandError:
+                # 如果基础分支不存在，创建它
+                self.logger.info(f"基础分支 {base_branch} 不存在，创建新分支")
+                repo.git.checkout('-b', base_branch)
+            
+            # 拉取最新代码（如果有远程仓库）
+            try:
+                repo.git.pull()
+            except git.exc.GitCommandError:
+                self.logger.debug("没有远程仓库或拉取失败，继续本地操作")
             
             # 创建新分支
             new_branch = repo.create_head(branch_name)
@@ -132,7 +168,8 @@ class GitHubService(GitService):
             return True
             
         except Exception as e:
-            self.logger.error(f"分支创建失败: {e}")
+            self.logger.error(f"分支创建失败: {repo_path}")
+            self.logger.error(f"错误详情: {e}")
             return False
     
     def commit_changes(self, repo_path: str, commit_message: str, files: List[str] = None) -> bool:

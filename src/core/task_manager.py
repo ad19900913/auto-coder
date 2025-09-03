@@ -212,8 +212,8 @@ class TaskManager:
         """
         try:
             # 检查任务状态
-            task_status = self.state_manager.get_task_status(task_id)
-            if not task_status:
+            task_status_enum = self.state_manager.get_task_status(task_id)
+            if not task_status_enum:
                 return True
             
             # 检查任务是否已在运行
@@ -222,14 +222,14 @@ class TaskManager:
                 return False
             
             # 检查任务状态
-            status = task_status.get('status')
-            if status in [TaskStatus.RUNNING, TaskStatus.REVIEWING]:
-                self.logger.warning(f"任务状态不允许执行: {task_id} -> {status}")
+            if task_status_enum in [TaskStatus.RUNNING, TaskStatus.REVIEWING]:
+                self.logger.warning(f"任务状态不允许执行: {task_id} -> {task_status_enum.value}")
                 return False
             
             # 检查重试次数
             max_attempts = self._get_task_max_attempts(task_id)
-            current_attempts = task_status.get('attempts', 0)
+            state_data = self.state_manager.load_state_file(task_id)
+            current_attempts = state_data.get('attempts', 0) if state_data else 0
             
             if current_attempts >= max_attempts:
                 self.logger.warning(f"任务重试次数已达上限: {task_id} ({current_attempts}/{max_attempts})")
