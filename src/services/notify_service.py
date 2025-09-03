@@ -33,27 +33,28 @@ class NotifyService:
         """初始化通知渠道"""
         self.channels = {}
         
-        # 获取全局通知配置
-        global_notification_config = self.config_manager.get_system_config().get('notification', {})
+        # 获取全局通知配置 - 使用正确的配置路径
+        global_config = self.config_manager.global_config
+        notification_channels_config = global_config.get('notification_templates', {}).get('channels', {})
         
         # 钉钉通知
         dingtalk_config = self.config_manager.get_notification_config().get('dingtalk', {})
         if (dingtalk_config.get('webhook_url') and 
-            global_notification_config.get('dingtalk', {}).get('enabled', True)):
+            notification_channels_config.get('dingtalk', {}).get('enabled', True)):
             self.channels['dingtalk'] = DingTalkNotifier(dingtalk_config)
             self.logger.debug("钉钉通知渠道初始化成功")
         
         # 邮件通知
         email_config = self.config_manager.get_notification_config().get('email', {})
         if (email_config.get('smtp_server') and 
-            global_notification_config.get('email', {}).get('enabled', True)):
+            notification_channels_config.get('email', {}).get('enabled', True)):
             self.channels['email'] = EmailNotifier(email_config)
             self.logger.debug("邮件通知渠道初始化成功")
         
         # Webhook通知（预留）
         webhook_config = self.config_manager.get_notification_config().get('webhook', {})
         if (webhook_config.get('url') and 
-            global_notification_config.get('webhook', {}).get('enabled', True)):
+            notification_channels_config.get('webhook', {}).get('enabled', True)):
             # self.channels['webhook'] = WebhookNotifier(webhook_config)
             self.logger.debug("Webhook通知渠道初始化成功")
     

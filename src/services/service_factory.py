@@ -39,7 +39,10 @@ class ServiceFactory:
             AI服务实例
         """
         if not provider:
-            provider = self.config_manager.global_config.get('ai_services', {}).get('default', 'claude')
+            # 从全局配置中获取默认AI服务
+            ai_services_config = self.config_manager.global_config.get('ai_services', {})
+            provider = ai_services_config.get('default', 'claude')
+            self.logger.info(f"使用默认AI服务: {provider}")
         
         if not config:
             config = self.config_manager.global_config.get('ai_services', {}).get(provider, {})
@@ -139,9 +142,10 @@ class ServiceFactory:
         """
         services = {}
         
-        # 创建AI服务
+        # 创建AI服务 - 使用全局默认配置
         ai_config = task_config.get('ai', {})
-        ai_provider = ai_config.get('provider', 'claude')
+        # 如果没有指定provider，使用全局默认值
+        ai_provider = ai_config.get('provider') if ai_config else None
         services['ai_service'] = self.create_ai_service(ai_provider, ai_config)
         
         # 创建Git服务
