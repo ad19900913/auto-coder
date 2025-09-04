@@ -4,7 +4,7 @@
 
 import logging
 from typing import Dict, Any, Optional
-from .ai_service import AIService, ClaudeService, DeepSeekService, GeminiService
+from .ai_service import AIService, ClaudeService, DeepSeekService, GeminiService, CursorService
 from .git_service import GitService, GitHubService, GitLabService
 from .notify_service import NotifyService
 
@@ -67,6 +67,8 @@ class ServiceFactory:
             service = DeepSeekService(config)
         elif provider == 'gemini':
             service = GeminiService(config)
+        elif provider == 'cursor':
+            service = CursorService(config)
         else:
             raise ValueError(f"不支持的AI服务提供商: {provider}")
         

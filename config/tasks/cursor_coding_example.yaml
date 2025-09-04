@@ -1,0 +1,64 @@
+# Cursor AI任务示例配置
+task_id: "cursor-web-app"
+name: "Cursor编码示例"
+description: "使用Cursor AI服务生成一个现代化的Web应用"
+type: "coding"
+enabled: true
+
+# 工作流配置
+workflow_mode: "automated"  # manual 或 automated
+
+# 任务调度配置
+schedule:
+  type: "cron"
+  cron_expressions: ["0 9 * * *"]  # 每天上午9点执行
+  timezone: "UTC+8"
+
+# 编码任务特定配置
+coding:
+  base_branch: "master"
+  branch_name: "feature/cursor-web-app"
+  project_path: "outputs/cursor-web-app"
+  repo_url: "https://github.com/ad19900913/cursor-web-app"
+  prompt: "使用React和TypeScript创建一个现代化的任务管理应用，包含以下功能：1. 添加、删除、编辑任务 2. 任务状态管理（待办、进行中、已完成） 3. 任务优先级设置 4. 任务分类和标签 5. 搜索和过滤功能 6. 响应式设计 7. 本地存储支持"
+
+# AI配置 - 使用Cursor
+ai:
+  provider: "cursor"
+  model: "cursor-1"
+  temperature: 0.1
+  max_tokens: 6000
+
+# Git配置
+git:
+  platform: "github"
+  token: "${GITHUB_TOKEN}"
+  username: "auto-coder"
+  email: "auto-coder@example.com"
+
+# 通知配置
+notifications:
+  channels:
+    - "email"
+  events:
+    - "task_start"
+    - "task_complete"
+    - "task_error"
+    - "human_approval_required"
+
+# 重试配置
+retry:
+  max_attempts: 3
+  backoff_factor: 2
+  max_delay: 3600
+
+# 超时配置
+timeout:
+  task: 7200  # 2小时
+  step: 1800  # 30分钟
+
+# 工作流特定配置
+workflow_config:
+  shortcuts_enabled: true
+  dod_check_enabled: true
+  artifact_retention_days: 30

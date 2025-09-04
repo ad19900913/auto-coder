@@ -4,7 +4,7 @@
 
 ## ✨ 系统特性
 
-- **🤖 多AI服务支持**: 集成Claude、DeepSeek、Gemini等主流AI服务，支持服务工厂模式
+- **🤖 多AI服务支持**: 集成Claude、DeepSeek、Gemini、Cursor等主流AI服务，支持服务工厂模式
 - **📅 灵活调度**: 支持crontab表达式、间隔调度、指定时间调度
 - **🔧 多任务类型**: 编码、审查、文档、需求审查、自定义任务
 - **⚙️ 工作流引擎**: 支持工作流模板、步骤控制、人工审批模式
@@ -36,7 +36,7 @@
 │   └── 自定义异常 (exceptions) - 系统特定异常类型
 ├── 服务模块 (src/services/)
 │   ├── 服务工厂 (ServiceFactory) - 统一服务实例创建和缓存
-│   ├── AI服务 (AIService) - Claude、DeepSeek、Gemini等AI服务抽象
+│   ├── AI服务 (AIService) - Claude、DeepSeek、Gemini、Cursor等AI服务抽象
 │   ├── Git服务 (GitService) - GitHub、GitLab等Git平台抽象
 │   └── 通知服务 (NotifyService) - 多渠道通知服务
 ├── 任务执行器 (src/tasks/)
@@ -168,6 +168,7 @@ python system_manager.py stop
 CLAUDE_API_KEY=your_claude_api_key
 DEEPSEEK_API_KEY=your_deepseek_api_key
 GEMINI_API_KEY=your_gemini_api_key
+CURSOR_API_KEY=your_cursor_api_key
 DEFAULT_AI_SERVICE=deepseek
 
 # Git服务配置
@@ -215,6 +216,10 @@ ai_services:
     api_key: "${GEMINI_API_KEY}"
     base_url: "https://generativelanguage.googleapis.com"
     model: "gemini-1.5-pro"
+  cursor:
+    api_key: "${CURSOR_API_KEY}"
+    base_url: "https://api.cursor.sh"
+    model: "cursor-1"
 
 # Git配置
 git:
@@ -251,7 +256,7 @@ coding:
 
 # AI配置 - 可选择不同的AI服务
 ai:
-  provider: "deepseek"  # 可选: claude, deepseek, gemini
+  provider: "deepseek"  # 可选: claude, deepseek, gemini, cursor
   model: "deepseek-reasoner"
   temperature: 0.1
   max_tokens: 4000
@@ -391,6 +396,7 @@ review:
 | **Claude** | Anthropic | claude-3-sonnet-20240229 | 代码生成能力强，逻辑清晰 |
 | **DeepSeek** | DeepSeek | deepseek-reasoner | 推理能力强，适合复杂任务 |
 | **Gemini** | Google | gemini-1.5-pro | 多模态支持，响应速度快 |
+| **Cursor** | Cursor | cursor-1 | 代码理解能力强，适合IDE集成 |
 
 ### 配置AI服务
 
@@ -398,12 +404,13 @@ review:
 
 ```bash
 # 选择默认AI服务
-DEFAULT_AI_SERVICE=gemini  # 可选: claude, deepseek, gemini
+DEFAULT_AI_SERVICE=cursor  # 可选: claude, deepseek, gemini, cursor
 
 # 配置API密钥
 CLAUDE_API_KEY=your_claude_api_key
 DEEPSEEK_API_KEY=your_deepseek_api_key
 GEMINI_API_KEY=your_gemini_api_key
+CURSOR_API_KEY=your_cursor_api_key
 ```
 
 #### 2. 任务级AI配置
@@ -411,10 +418,10 @@ GEMINI_API_KEY=your_gemini_api_key
 在任务配置文件中指定使用的AI服务：
 
 ```yaml
-# 使用Gemini
+# 使用Cursor
 ai:
-  provider: "gemini"
-  model: "gemini-1.5-pro"
+  provider: "cursor"
+  model: "cursor-1"
   temperature: 0.1
   max_tokens: 6000
 
@@ -435,6 +442,13 @@ ai:
 
 ### 测试AI服务
 
+#### 测试Cursor API
+
+```bash
+# 运行Cursor功能测试
+python test_cursor.py
+```
+
 #### 测试Gemini API
 
 ```bash
@@ -451,10 +465,11 @@ python test_email.py
 
 ### AI服务选择建议
 
-- **代码生成**: 推荐使用 **Gemini** 或 **Claude**，代码质量高
+- **代码生成**: 推荐使用 **Cursor** 或 **Claude**，代码质量高
 - **代码审查**: 推荐使用 **DeepSeek**，逻辑分析能力强
 - **需求分析**: 推荐使用 **DeepSeek**，推理能力优秀
 - **文档生成**: 推荐使用 **Claude**，文档结构清晰
+- **IDE集成**: 推荐使用 **Cursor**，代码理解能力强
 - **自定义任务**: 根据任务特点选择合适的服务
 
 ## 📚 文档

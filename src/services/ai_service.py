@@ -743,3 +743,173 @@ class GeminiService(AIService):
 5. 非功能性需求：性能、安全、可扩展性等
 
 请提供详细的分析报告。"""
+
+
+class CursorService(AIService):
+    """Cursor AI服务实现"""
+    
+    def __init__(self, config: Dict[str, Any]):
+        super().__init__(config)
+        # 配置Cursor API
+        self.headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {self.api_key}'
+        }
+    
+    def generate_code(self, prompt: str, task_type: str = "coding", **kwargs) -> str:
+        """生成代码"""
+        try:
+            system_prompt = self._build_system_prompt(task_type)
+            user_prompt = f"{system_prompt}\n\n{prompt}"
+            
+            response = self._call_cursor_api(user_prompt, task_type, **kwargs)
+            return response
+            
+        except Exception as e:
+            self.logger.error(f"代码生成失败: {e}")
+            raise
+    
+    def review_code(self, code: str, coding_standards: str, **kwargs) -> Dict[str, Any]:
+        """审查代码"""
+        try:
+            system_prompt = self._build_review_prompt(coding_standards)
+            user_prompt = f"请审查以下代码，并按照编码规范指出问题：\n\n```\n{code}\n```"
+            
+            response = self._call_cursor_api(user_prompt, "review", **kwargs)
+            review_result = self._parse_review_response(response)
+            
+            return review_result
+            
+        except Exception as e:
+            self.logger.error(f"代码审查失败: {e}")
+            raise
+    
+    def analyze_requirement_code(self, requirement: str, code: str, **kwargs) -> Dict[str, Any]:
+        """分析需求与代码的一致性"""
+        try:
+            system_prompt = self._build_requirement_analysis_prompt()
+            user_prompt = f"""
+需求文档：
+{requirement}
+
+代码实现：
+{code}
+
+请分析需求与代码实现的一致性。
+"""
+            
+            response = self._call_cursor_api(user_prompt, "requirement_review", **kwargs)
+            analysis_result = self._parse_analysis_response(response)
+            
+            return analysis_result
+            
+        except Exception as e:
+            self.logger.error(f"需求代码分析失败: {e}")
+            raise
+    
+    def execute_custom_task(self, prompt: str, **kwargs) -> str:
+        """执行自定义任务"""
+        try:
+            system_prompt = "你是一个专业的AI助手，请根据用户的要求完成任务。"
+            user_prompt = f"任务要求：{prompt}"
+            
+            response = self._call_cursor_api(user_prompt, "custom", **kwargs)
+            return response
+            
+        except Exception as e:
+            self.logger.error(f"自定义任务执行失败: {e}")
+            raise
+    
+    def _call_cursor_api(self, prompt: str, task_type: str, **kwargs) -> str:
+        """调用Cursor API"""
+        try:
+            # 获取任务特定参数
+            task_params = self.config.get('task_parameters', {}).get(task_type, {})
+            
+            # 构建请求参数
+            request_data = {
+                'model': self.model,
+                'messages': [
+                    {'role': 'system', 'content': '你是一个专业的AI助手。'},
+                    {'role': 'user', 'content': prompt}
+                ],
+                'max_tokens': task_params.get('max_tokens', 4000),
+                'temperature': task_params.get('temperature', 0.1),
+                'stream': False
+            }
+            
+            # 发送请求
+            response = requests.post(
+                f"{self.base_url}/v1/chat/completions",
+                headers=self.headers,
+                json=request_data,
+                timeout=60
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                content = result['choices'][0]['message']['content']
+                return content
+            else:
+                raise Exception(f"Cursor API调用失败: {response.status_code} - {response.text}")
+                
+        except Exception as e:
+            self.logger.error(f"Cursor API调用失败: {e}")
+            raise
+    
+    def _build_system_prompt(self, task_type: str) -> str:
+        """构建系统提示词（与DeepSeek类似）"""
+        if task_type == "coding":
+            return """你是一个专业的代码生成助手。请根据用户的需求生成高质量的代码。
+
+代码生成要求：
+1. 代码结构清晰，注释完整
+2. 遵循最佳实践和设计模式
+3. 考虑错误处理和边界情况
+4. 提供必要的文档说明
+5. 确保代码可维护和可扩展
+
+请生成完整的代码实现。"""
+        
+        elif task_type == "review":
+            return """你是一个专业的代码审查助手。请仔细审查代码，指出问题并提供改进建议。
+
+审查要点：
+1. 代码质量和规范性
+2. 性能和安全问题
+3. 设计模式和架构
+4. 错误处理
+5. 测试覆盖
+
+请提供详细的审查报告。"""
+        
+        else:
+            return "你是一个专业的AI助手，请根据用户的要求完成任务。"
+    
+    def _build_review_prompt(self, coding_standards: str) -> str:
+        """构建代码审查提示词（与DeepSeek类似）"""
+        return f"""你是一个专业的代码审查助手。请根据以下编码规范审查代码：
+
+编码规范：
+{coding_standards}
+
+审查要求：
+1. 检查代码是否符合编码规范
+2. 指出代码质量问题
+3. 提供具体的改进建议
+4. 评估代码的可维护性
+
+请提供结构化的审查报告。"""
+    
+    def _build_requirement_analysis_prompt(self) -> str:
+        """构建需求分析提示词（与DeepSeek类似）"""
+        return """你是一个专业的需求分析师和架构师。请分析需求文档与代码实现的一致性。
+
+分析维度：
+1. 功能完整性：代码是否实现了所有需求功能
+2. 架构合理性：代码架构是否满足需求要求
+3. 接口一致性：API设计是否与需求描述一致
+4. 数据模型：数据结构是否支持需求场景
+5. 非功能性需求：性能、安全、可扩展性等
+
+请提供详细的分析报告。"""
