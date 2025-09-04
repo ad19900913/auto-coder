@@ -68,7 +68,7 @@ ai_services:
   gemini:
     api_key: "${GEMINI_API_KEY}"
     base_url: "https://generativelanguage.googleapis.com"
-    model: "gemini-1.5-pro"
+    model: "gemini-2.5-pro"
     max_tokens: 4000
     temperature: 0.1
     

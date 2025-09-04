@@ -1,9 +1,9 @@
 # 编码任务示例配置
 task_id: "auto-webhook-tool"
 name: "auto-webhook-tool"
-description: "使用最新的前端框架和UI框架实现一套webhook回调地址、回调消息管理工具"
+description: "webhook回调工具"
 type: "coding"
-enabled: true
+enabled: false
 
 # 工作流配置
 workflow_mode: "automated"  # manual 或 automated
@@ -21,44 +21,3 @@ coding:
   project_path: "outputs/auto-webhook-tool"
   repo_url: "https://github.com/ad19900913/auto-webhook-tool"
   prompt: "使用最新的前端框架和UI框架实现一套webhook回调地址、回调消息管理工具，包括webhook地址的增删改查、webhook回调消息的查询功能"
-
-# AI配置
-# ai:
-#   provider: "claude"
-#   model: "claude-3-sonnet-20240229"
-#   temperature: 0.7
-#   max_tokens: 4000
-
-# Git配置
-# git:
-#   platform: "github"
-#   token: "${GITHUB_TOKEN}"
-#   username: "auto-coder"
-#   email: "auto-coder@example.com"
-
-# 通知配置
-# notifications:
-#   channels:
-#     - "email"
-#   events:
-#     - "task_start"
-#     - "task_complete"
-#     - "task_error"
-#     - "human_approval_required"
-
-# 重试配置
-# retry:
-#   max_attempts: 3
-#   backoff_factor: 2
-#   max_delay: 3600
-
-# 超时配置
-# timeout:
-#   task: 7200  # 2小时
-#   step: 1800  # 30分钟
-
-# 工作流特定配置
-# workflow_config:
-#   shortcuts_enabled: true
-#   dod_check_enabled: true
-#   artifact_retention_days: 30

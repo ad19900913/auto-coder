@@ -130,19 +130,19 @@ class PersistentSystemManager:
             self._setup_logging(daemon_mode)
             
             # 初始化组件
-            self.logger.info("初始化配置管理器...")
+            self.logger.debug("初始化配置管理器...")
             config_manager = ConfigManager(self.config_dir)
             
-            self.logger.info("初始化状态管理器...")
+            self.logger.debug("初始化状态管理器...")
             state_manager = StateManager()
             
-            self.logger.info("初始化状态文件管理器...")
+            self.logger.debug("初始化状态文件管理器...")
             state_file_manager = StateFileManager(config_manager)
             
-            self.logger.info("初始化通知服务...")
+            self.logger.debug("初始化通知服务...")
             notify_service = NotifyService(config_manager)
             
-            self.logger.info("初始化任务管理器...")
+            self.logger.debug("初始化任务管理器...")
             self.task_manager = TaskManager(
                 config_manager=config_manager,
                 state_manager=state_manager,
@@ -150,7 +150,7 @@ class PersistentSystemManager:
             )
             
             # 启动任务管理器
-            self.logger.info("启动任务管理器...")
+            self.logger.debug("启动任务管理器...")
             self.task_manager.start()
             self.running = True
             
