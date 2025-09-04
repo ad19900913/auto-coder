@@ -15,6 +15,7 @@ from .scheduler import TaskScheduler
 from .task_executor import TaskExecutor
 from .task_executor_factory import TaskExecutorFactory
 from .task_manager import TaskManager
+from .dependency_manager import DependencyManager, DependencyType, ResourceManager
 from .workflow_engine import WorkflowEngine, WorkflowMode, StepStatus, StepResult, WorkflowContext, WorkflowTemplate
 
 # 导入异常类
@@ -34,6 +35,9 @@ __all__ = [
     'TaskExecutor',
     'TaskExecutorFactory',
     'TaskManager',
+    'DependencyManager',
+    'DependencyType',
+    'ResourceManager',
     'WorkflowEngine',
     'WorkflowMode',
     'StepStatus',

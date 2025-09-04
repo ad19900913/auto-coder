@@ -41,6 +41,10 @@ class TaskExecutorFactory:
             from ..tasks.doc_executor import DocTaskExecutor
             from ..tasks.requirement_review_executor import RequirementReviewTaskExecutor
             from ..tasks.custom_executor import CustomTaskExecutor
+            from ..tasks.intelligent_task_executor import IntelligentTaskExecutor
+            from ..tasks.ai_model_management_executor import AIModelManagementExecutor
+            from ..tasks.multimodal_ai_executor import MultimodalAIExecutor
+            from ..tasks.machine_learning_executor import MachineLearningExecutor
             
             # 注册执行器
             self._executor_registry = {
@@ -48,7 +52,11 @@ class TaskExecutorFactory:
                 'review': ReviewTaskExecutor,
                 'doc': DocTaskExecutor,
                 'requirement_review': RequirementReviewTaskExecutor,
-                'custom': CustomTaskExecutor
+                'custom': CustomTaskExecutor,
+                'intelligent_task': IntelligentTaskExecutor,
+                'ai_model_management': AIModelManagementExecutor,
+                'multimodal_ai': MultimodalAIExecutor,
+                'machine_learning': MachineLearningExecutor
             }
             
             self.logger.debug(f"任务执行器注册完成，支持的任务类型: {list(self._executor_registry.keys())}")

@@ -10,6 +10,10 @@ from .notify_service import NotifyService
 from .incremental_code_service import IncrementalCodeService
 from .complex_refactor_service import ComplexRefactorService
 from .mcp_service import MCPService, MCPToolManager
+from .intelligent_task_service import IntelligentTaskService
+from .ai_model_manager import AIModelManager
+from .multimodal_ai_service import MultimodalAIService
+from .machine_learning_service import MachineLearningService
 
 
 class ServiceFactory:
@@ -29,6 +33,10 @@ class ServiceFactory:
         self._ai_service_cache = {}
         self._git_service_cache = {}
         self._notify_service_cache = None
+        self._intelligent_task_service_cache = None
+        self._ai_model_manager_cache = None
+        self._multimodal_ai_service_cache = None
+        self._machine_learning_service_cache = None
     
     def create_ai_service(self, provider: str = None, config: Dict[str, Any] = None) -> AIService:
         """
@@ -137,6 +145,82 @@ class ServiceFactory:
         
         return self._notify_service_cache
     
+    def create_intelligent_task_service(self, ai_service: AIService = None) -> IntelligentTaskService:
+        """
+        创建智能任务生成服务实例
+        
+        Args:
+            ai_service: AI服务实例，如果为None则创建默认实例
+            
+        Returns:
+            智能任务生成服务实例
+        """
+        if self._intelligent_task_service_cache is None:
+            if ai_service is None:
+                ai_service = self.create_ai_service()
+            
+            # 获取智能任务生成服务配置
+            intelligent_task_config = self.config_manager.global_config.get('intelligent_task_generation', {})
+            
+            self._intelligent_task_service_cache = IntelligentTaskService(ai_service, intelligent_task_config)
+            self.logger.info("智能任务生成服务创建成功")
+        
+        return self._intelligent_task_service_cache
+    
+    def create_ai_model_manager(self) -> AIModelManager:
+        """
+        创建AI模型管理器实例
+        
+        Returns:
+            AI模型管理器实例
+        """
+        if self._ai_model_manager_cache is None:
+            # 获取AI模型管理配置
+            ai_model_config = self.config_manager.global_config.get('ai_model_management', {})
+            
+            self._ai_model_manager_cache = AIModelManager(ai_model_config)
+            self.logger.info("AI模型管理器创建成功")
+        
+        return self._ai_model_manager_cache
+    
+    def create_multimodal_ai_service(self, ai_service: AIService = None) -> MultimodalAIService:
+        """
+        创建多模态AI服务实例
+        
+        Args:
+            ai_service: AI服务实例，如果为None则创建默认实例
+            
+        Returns:
+            多模态AI服务实例
+        """
+        if self._multimodal_ai_service_cache is None:
+            if ai_service is None:
+                ai_service = self.create_ai_service()
+            
+            # 获取多模态AI服务配置
+            multimodal_config = self.config_manager.global_config.get('multimodal_ai', {})
+            
+            self._multimodal_ai_service_cache = MultimodalAIService(multimodal_config, ai_service)
+            self.logger.info("多模态AI服务创建成功")
+        
+        return self._multimodal_ai_service_cache
+    
+    def create_machine_learning_service(self) -> MachineLearningService:
+        """
+        创建机器学习服务实例
+        
+        Returns:
+            机器学习服务实例
+        """
+        if self._machine_learning_service_cache is None:
+            # 获取机器学习服务配置
+            ml_config = self.config_manager.global_config.get('machine_learning', {})
+            
+            self._machine_learning_service_cache = MachineLearningService(ml_config)
+            self.logger.info("机器学习服务创建成功")
+        
+        return self._machine_learning_service_cache
+    
     def create_services_for_task(self, task_config: Dict[str, Any]) -> Dict[str, Any]:
         """
         为任务创建所需的服务实例
@@ -177,6 +261,18 @@ class ServiceFactory:
         # 设置AI服务的MCP工具管理器
         services['ai_service'].set_mcp_tool_manager(services['mcp_tool_manager'])
         
+        # 创建智能任务生成服务
+        services['intelligent_task_service'] = self.create_intelligent_task_service(services['ai_service'])
+        
+        # 创建AI模型管理器
+        services['ai_model_manager'] = self.create_ai_model_manager()
+        
+        # 创建多模态AI服务
+        services['multimodal_ai_service'] = self.create_multimodal_ai_service(services['ai_service'])
+        
+        # 创建机器学习服务
+        services['machine_learning_service'] = self.create_machine_learning_service()
+        
         return services
     
     def clear_cache(self):
@@ -184,4 +280,7 @@ class ServiceFactory:
         self._ai_service_cache.clear()
         self._git_service_cache.clear()
         self._notify_service_cache = None
+        self._intelligent_task_service_cache = None
+        self._ai_model_manager_cache = None
+        self._multimodal_ai_service_cache = None
         self.logger.info("服务缓存已清除")

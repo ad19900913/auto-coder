@@ -12,11 +12,19 @@ from .review_executor import ReviewTaskExecutor
 from .doc_executor import DocTaskExecutor
 from .requirement_review_executor import RequirementReviewTaskExecutor
 from .custom_executor import CustomTaskExecutor
+from .intelligent_task_executor import IntelligentTaskExecutor
+from .ai_model_management_executor import AIModelManagementExecutor
+from .multimodal_ai_executor import MultimodalAIExecutor
+from .machine_learning_executor import MachineLearningExecutor
 
 __all__ = [
     'CodingTaskExecutor',
     'ReviewTaskExecutor',
     'DocTaskExecutor',
     'RequirementReviewTaskExecutor',
-    'CustomTaskExecutor'
+    'CustomTaskExecutor',
+    'IntelligentTaskExecutor',
+    'AIModelManagementExecutor',
+    'MultimodalAIExecutor',
+    'MachineLearningExecutor'
 ]

@@ -1,0 +1,81 @@
+# 多模态AI支持任务示例配置
+task_id: "multimodal_ai_example"
+name: "多模态AI支持示例"
+description: "演示多模态AI支持功能的示例任务"
+type: "multimodal_ai"
+enabled: true
+priority: 5
+
+# 调度配置
+schedule:
+  type: "manual"
+
+# 多模态AI配置
+multimodal_ai:
+  operation: "process_single_file"  # 操作类型: process_single_file, batch_process, analyze_media, extract_content, convert_format, enhance_media
+  
+  # 单个文件处理配置
+  file_path: "./test_files/sample_image.jpg"  # 文件路径
+  processing_type: "analysis"  # 处理类型: recognition, analysis, extraction, conversion, enhancement
+  
+  # 处理选项
+  options:
+    use_ai_analysis: true
+    max_tokens: 1000
+    temperature: 0.3
+    prompt: "请分析这张图片的内容，包括主要元素、颜色、构图等"
+  
+  # 批量处理配置（用于batch_process操作）
+  # file_paths:
+  #   - "./test_files/image1.jpg"
+  #   - "./test_files/document.pdf"
+  #   - "./test_files/document.docx"
+  
+  # 分析选项（用于analyze_media操作）
+  # analysis_options:
+  #   use_ai_analysis: true
+  #   analysis_prompt: "请详细分析这个媒体文件的内容和特征"
+  
+  # 提取选项（用于extract_content操作）
+  # extraction_options:
+  #   use_ai_extraction: true
+  #   text_extraction_prompt: "请提取这个文件中的所有文字内容"
+  #   extraction_prompt: "请提取关键信息"
+  
+  # 转换选项（用于convert_format操作）
+  # conversion_options:
+  #   target_format: "text"
+  #   preserve_formatting: true
+  
+  # 增强选项（用于enhance_media操作）
+  # enhancement_options:
+  #   enhance_brightness: true
+  #   brightness_factor: 1.2
+  #   enhance_contrast: true
+  #   contrast_factor: 1.5
+  #   enhance_sharpness: true
+
+# 输出配置
+output:
+  output_path: "./outputs/multimodal_ai"
+  filename_template: "multimodal_ai_{operation}_{timestamp}"
+
+# 重试配置
+retry:
+  max_attempts: 2
+  base_delay: 30
+  max_delay: 300
+  backoff_multiplier: 2
+  jitter: 0.1
+
+# 超时配置
+timeout:
+  task_timeout: 1800   # 30分钟
+  processing_timeout: 1200  # 20分钟
+
+# 通知配置
+notify:
+  on_start: true
+  on_complete: true
+  on_error: true
+  channels: ["console"]

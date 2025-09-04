@@ -1,0 +1,135 @@
+# 机器学习集成任务示例配置
+task_id: "machine_learning_example"
+name: "机器学习集成示例"
+description: "演示机器学习集成功能的示例任务"
+type: "machine_learning"
+enabled: true
+priority: 5
+
+# 调度配置
+schedule:
+  type: "manual"
+
+# 机器学习配置
+machine_learning:
+  operation: "predict_task"  # 操作类型: predict_task, detect_anomalies, create_ab_test, assign_variant, record_ab_result, analyze_ab_test, add_metrics, get_statistics, save_models, load_models, cleanup_data
+  
+  # 任务预测配置（用于predict_task操作）
+  task_config:
+    type: "coding"
+    priority: 7
+    schedule:
+      type: "cron"
+      expression: "0 9 * * 1-5"
+    dependencies:
+      - task_id: "data_preparation"
+        type: "required"
+    resources:
+      cpu: 2
+      memory: 2048
+      disk: 500
+    retry:
+      max_attempts: 3
+      base_delay: 60
+    timeout:
+      task_timeout: 3600
+    notify:
+      on_complete: true
+      on_error: true
+  
+  # 异常检测配置（用于detect_anomalies操作）
+  # task_type: "coding"
+  # days: 30
+  
+  # A/B测试配置（用于create_ab_test操作）
+  # test_id: "ui_optimization_test"
+  # name: "UI优化A/B测试"
+  # description: "测试不同UI布局对用户行为的影响"
+  # variants:
+  #   control:
+  #     layout: "traditional"
+  #     color_scheme: "blue"
+  #   variant_a:
+  #     layout: "modern"
+  #     color_scheme: "green"
+  #   variant_b:
+  #     layout: "minimal"
+  #     color_scheme: "gray"
+  # traffic_split:
+  #   control: 0.33
+  #   variant_a: 0.33
+  #   variant_b: 0.34
+  # metrics:
+  #   - "click_rate"
+  #   - "conversion_rate"
+  #   - "time_on_page"
+  # duration_days: 14
+  
+  # 变体分配配置（用于assign_variant操作）
+  # test_id: "ui_optimization_test"
+  # user_id: "user123"
+  
+  # A/B测试结果记录配置（用于record_ab_result操作）
+  # test_id: "ui_optimization_test"
+  # variant: "variant_a"
+  # metrics:
+  #   click_rate: 0.15
+  #   conversion_rate: 0.08
+  #   time_on_page: 120.5
+  # sample_size: 1000
+  
+  # A/B测试分析配置（用于analyze_ab_test操作）
+  # test_id: "ui_optimization_test"
+  
+  # 任务指标配置（用于add_metrics操作）
+  # task_id: "coding_task_001"
+  # task_type: "coding"
+  # duration: 1800.5
+  # success: true
+  # error_count: 0
+  # retry_count: 1
+  # resource_usage:
+  #   cpu: 85.2
+  #   memory: 1024.5
+  #   disk: 50.0
+  # features:
+  #   priority: 7
+  #   has_schedule: 1
+  #   has_dependencies: 1
+  #   has_resources: 1
+  #   retry_enabled: 1
+  #   timeout_set: 1
+  #   notify_enabled: 1
+  #   config_complexity: 1200
+  #   dependency_count: 2
+  #   cpu_required: 2
+  #   memory_required: 2048
+  #   disk_required: 500
+  
+  # 数据清理配置（用于cleanup_data操作）
+  # days: 90
+
+# 输出配置
+output:
+  output_path: "./outputs/machine_learning"
+  filename_template: "ml_{operation}_{timestamp}"
+
+# 重试配置
+retry:
+  max_attempts: 2
+  base_delay: 30
+  max_delay: 300
+  backoff_multiplier: 2
+  jitter: 0.1
+
+# 超时配置
+timeout:
+  task_timeout: 1800   # 30分钟
+  processing_timeout: 1200  # 20分钟
+
+# 通知配置
+notify:
+  on_start: true
+  on_complete: true
+  on_error: true
+  channels: ["console"]

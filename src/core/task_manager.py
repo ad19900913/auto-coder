@@ -13,6 +13,7 @@ from .scheduler import TaskScheduler
 from .task_executor_factory import TaskExecutorFactory
 from .state_manager import StateManager, TaskStatus
 from .config_manager import ConfigManager
+from .dependency_manager import DependencyManager
 from ..services.notify_service import NotifyService
 
 
@@ -40,6 +41,7 @@ class TaskManager:
         # 初始化组件
         self.scheduler = TaskScheduler(config_manager, max_workers)
         self.executor_factory = TaskExecutorFactory(config_manager, state_manager, notify_service)
+        self.dependency_manager = DependencyManager()
         
         # 任务执行状态
         self.running_tasks = {}
@@ -94,48 +96,91 @@ class TaskManager:
             # 获取所有任务配置
             task_configs = self.config_manager.get_all_task_configs()
             
-            for task_id, task_config in task_configs.items():
-                try:
-                    # 检查任务是否启用
-                    if not task_config.get('enabled', True):
-                        self.logger.info(f"任务已禁用，跳过: {task_id}")
-                        continue
-                    
-                    # 验证任务配置
-                    validation_errors = self.executor_factory.validate_task_config(task_id, task_config)
-                    if validation_errors:
-                        self.logger.error(f"任务配置验证失败 {task_id}: {validation_errors}")
-                        continue
-                    
-                    # 获取调度配置
-                    schedule_config = task_config.get('schedule', {})
-                    if not schedule_config:
-                        self.logger.warning(f"任务缺少调度配置，跳过: {task_id}")
-                        continue
-                    
-                    # 获取任务优先级
-                    priority = task_config.get('priority', 1)
-                    
-                    # 添加到调度器
-                    if self.scheduler.add_task(
-                        task_id=task_id,
-                        task_func=self._execute_task_wrapper,
-                        schedule_config=schedule_config,
-                        priority=priority,
-                        task_config=task_config
-                    ):
-                        self.logger.info(f"任务调度成功: {task_id}")
-                    else:
-                        self.logger.error(f"任务调度失败: {task_id}")
-                
-                except Exception as e:
-                    self.logger.error(f"加载任务配置失败 {task_id}: {e}")
-                    continue
+            # 首先构建依赖图
+            self._build_dependency_graph(task_configs)
             
-            self.logger.info(f"任务加载完成，共加载 {len(task_configs)} 个任务")
+            # 检查循环依赖
+            cycles = self.dependency_manager.check_circular_dependencies()
+            if cycles:
+                self.logger.error(f"发现循环依赖，无法启动: {cycles}")
+                return
+            
+            # 获取执行顺序
+            execution_order = self.dependency_manager.get_execution_order()
+            if not execution_order:
+                self.logger.error("无法确定任务执行顺序")
+                return
+            
+            # 按执行顺序调度任务
+            for layer_index, task_layer in enumerate(execution_order):
+                for task_id in task_layer:
+                    try:
+                        task_config = task_configs.get(task_id)
+                        if not task_config:
+                            continue
+                        
+                        # 检查任务是否启用
+                        if not task_config.get('enabled', True):
+                            self.logger.info(f"任务已禁用，跳过: {task_id}")
+                            continue
+                        
+                        # 验证任务配置
+                        validation_errors = self.executor_factory.validate_task_config(task_id, task_config)
+                        if validation_errors:
+                            self.logger.error(f"任务配置验证失败 {task_id}: {validation_errors}")
+                            continue
+                        
+                        # 获取调度配置
+                        schedule_config = task_config.get('schedule', {})
+                        if not schedule_config:
+                            self.logger.warning(f"任务缺少调度配置，跳过: {task_id}")
+                            continue
+                        
+                        # 获取任务优先级
+                        priority = task_config.get('priority', 1)
+                        
+                        # 添加到调度器
+                        if self.scheduler.add_task(
+                            task_id=task_id,
+                            task_func=self._execute_task_wrapper,
+                            schedule_config=schedule_config,
+                            priority=priority,
+                            task_config=task_config
+                        ):
+                            self.logger.info(f"任务调度成功: {task_id} (层级: {layer_index})")
+                        else:
+                            self.logger.error(f"任务调度失败: {task_id}")
+                    
+                    except Exception as e:
+                        self.logger.error(f"加载任务配置失败 {task_id}: {e}")
+                        continue
+            
+            self.logger.info(f"任务加载完成，共加载 {len(task_configs)} 个任务，执行层级: {len(execution_order)}")
             
         except Exception as e:
             self.logger.error(f"加载任务配置失败: {e}")
+    
+    def _build_dependency_graph(self, task_configs: Dict[str, Any]):
+        """构建依赖图"""
+        try:
+            for task_id, task_config in task_configs.items():
+                # 获取依赖配置
+                dependencies = task_config.get('dependencies', [])
+                priority = task_config.get('priority', 1)
+                resource_requirements = task_config.get('resource_requirements', {})
+                
+                # 添加到依赖管理器
+                self.dependency_manager.add_task(
+                    task_id=task_id,
+                    dependencies=dependencies,
+                    priority=priority,
+                    resource_requirements=resource_requirements
+                )
+            
+            self.logger.info(f"依赖图构建完成，共 {len(task_configs)} 个任务")
+            
+        except Exception as e:
+            self.logger.error(f"构建依赖图失败: {e}")
     
     def _execute_task_wrapper(self, task_id: str, task_config: Dict[str, Any] = None):
         """
@@ -150,6 +195,21 @@ class TaskManager:
             if not self._should_execute_task(task_id):
                 self.logger.info(f"任务跳过执行: {task_id}")
                 return
+            
+            # 检查依赖是否满足
+            if not self.dependency_manager.can_execute_task(task_id):
+                self.logger.info(f"任务依赖未满足，跳过执行: {task_id}")
+                return
+            
+            # 分配资源
+            task_node = self.dependency_manager.task_graph.get(task_id)
+            if task_node and task_node.resource_requirements:
+                if not self.dependency_manager.resource_manager.allocate_resources(task_id, task_node.resource_requirements):
+                    self.logger.warning(f"资源不足，跳过执行: {task_id}")
+                    return
+            
+            # 标记任务开始执行
+            self.dependency_manager._executing_tasks.add(task_id)
             
             # 创建任务执行器
             executor = self.executor_factory.create_executor(task_id)
@@ -170,6 +230,12 @@ class TaskManager:
                 self.running_tasks.pop(task_id, None)
                 self.task_futures.pop(task_id, None)
             
+            # 标记任务完成
+            if result.get('success', False):
+                self.dependency_manager.mark_task_completed(task_id, result)
+            else:
+                self.dependency_manager.mark_task_failed(task_id, result.get('error'))
+            
             self.logger.info(f"任务执行完成: {task_id}, 结果: {result}")
             
         except Exception as e:
@@ -179,6 +245,9 @@ class TaskManager:
             with self._lock:
                 self.running_tasks.pop(task_id, None)
                 self.task_futures.pop(task_id, None)
+            
+            # 标记任务失败
+            self.dependency_manager.mark_task_failed(task_id, str(e))
     
     def _execute_task_safe(self, executor) -> Dict[str, Any]:
         """
@@ -516,6 +585,147 @@ class TaskManager:
     def is_running(self) -> bool:
         """检查任务管理器是否正在运行"""
         return not self._stop_flag and self.scheduler.is_running()
+    
+    # 依赖管理相关方法
+    def get_dependency_graph(self) -> Dict[str, Any]:
+        """
+        获取依赖图信息
+        
+        Returns:
+            依赖图信息
+        """
+        return self.dependency_manager.get_dependency_graph()
+    
+    def get_task_dependencies(self, task_id: str) -> Dict[str, Any]:
+        """
+        获取任务依赖信息
+        
+        Args:
+            task_id: 任务ID
+            
+        Returns:
+            任务依赖信息
+        """
+        return self.dependency_manager.get_task_status(task_id)
+    
+    def get_ready_tasks(self) -> List[str]:
+        """
+        获取可以执行的任务列表
+        
+        Returns:
+            可执行任务列表
+        """
+        return self.dependency_manager.get_ready_tasks()
+    
+    def get_resource_status(self) -> Dict[str, Any]:
+        """
+        获取资源状态
+        
+        Returns:
+            资源状态信息
+        """
+        return self.dependency_manager.resource_manager.get_resource_status()
+    
+    def add_task_dependency(self, task_id: str, dependency_task_id: str, 
+                           dependency_type: str = "required", condition: Callable = None) -> bool:
+        """
+        添加任务依赖
+        
+        Args:
+            task_id: 任务ID
+            dependency_task_id: 依赖任务ID
+            dependency_type: 依赖类型
+            condition: 条件函数
+            
+        Returns:
+            是否添加成功
+        """
+        try:
+            # 检查任务是否存在
+            if task_id not in self.dependency_manager.task_graph:
+                self.logger.error(f"任务不存在: {task_id}")
+                return False
+            
+            if dependency_task_id not in self.dependency_manager.task_graph:
+                self.logger.error(f"依赖任务不存在: {dependency_task_id}")
+                return False
+            
+            # 创建依赖信息
+            dependency_info = {
+                'task_id': dependency_task_id,
+                'type': dependency_type,
+                'condition': condition
+            }
+            
+            # 添加到依赖图
+            task_node = self.dependency_manager.task_graph[task_id]
+            dep_info = self.dependency_manager.DependencyInfo(
+                task_id=dependency_task_id,
+                dependency_type=self.dependency_manager.DependencyType(dependency_type),
+                condition=condition
+            )
+            task_node.dependencies.append(dep_info)
+            
+            # 更新依赖关系
+            self.dependency_manager._update_dependency_relationships()
+            
+            self.logger.info(f"依赖添加成功: {task_id} -> {dependency_task_id}")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"添加任务依赖失败: {e}")
+            return False
+    
+    def remove_task_dependency(self, task_id: str, dependency_task_id: str) -> bool:
+        """
+        移除任务依赖
+        
+        Args:
+            task_id: 任务ID
+            dependency_task_id: 依赖任务ID
+            
+        Returns:
+            是否移除成功
+        """
+        try:
+            if task_id not in self.dependency_manager.task_graph:
+                return False
+            
+            task_node = self.dependency_manager.task_graph[task_id]
+            
+            # 移除依赖
+            task_node.dependencies = [
+                dep for dep in task_node.dependencies 
+                if dep.task_id != dependency_task_id
+            ]
+            
+            # 更新依赖关系
+            self.dependency_manager._update_dependency_relationships()
+            
+            self.logger.info(f"依赖移除成功: {task_id} -> {dependency_task_id}")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"移除任务依赖失败: {e}")
+            return False
+    
+    def check_circular_dependencies(self) -> List[List[str]]:
+        """
+        检查循环依赖
+        
+        Returns:
+            循环依赖列表
+        """
+        return self.dependency_manager.check_circular_dependencies()
+    
+    def get_execution_order(self) -> List[List[str]]:
+        """
+        获取任务执行顺序
+        
+        Returns:
+            执行顺序（分层）
+        """
+        return self.dependency_manager.get_execution_order()
     
     def _execute_workflow_task_safe(self, executor):
         """

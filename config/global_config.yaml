@@ -327,3 +327,223 @@ system:
   output_dir: "./outputs"
   max_concurrent_tasks: 5
   default_timeout: 300
+
+# 智能任务生成配置
+intelligent_task_generation:
+  enabled: true
+  
+  # 优化规则
+  optimization_rules:
+    coding:
+      max_tokens_multiplier: 1.5
+      temperature_adjustment: 0.8
+      timeout_multiplier: 1.3
+      retry_attempts_increase: 1
+    
+    review:
+      max_tokens_multiplier: 1.2
+      temperature_adjustment: 0.9
+      timeout_multiplier: 1.1
+      retry_attempts_increase: 0
+    
+    doc:
+      max_tokens_multiplier: 1.8
+      temperature_adjustment: 0.7
+      timeout_multiplier: 1.5
+      retry_attempts_increase: 1
+    
+    requirement_review:
+      max_tokens_multiplier: 1.6
+      temperature_adjustment: 0.8
+      timeout_multiplier: 1.4
+      retry_attempts_increase: 1
+    
+    custom:
+      max_tokens_multiplier: 1.3
+      temperature_adjustment: 0.9
+      timeout_multiplier: 1.2
+      retry_attempts_increase: 0
+  
+  # 模板管理
+  template_management:
+    auto_learn: true
+    template_retention_days: 365
+    min_usage_count: 3
+    success_rate_threshold: 0.7
+  
+  # 预测配置
+  prediction:
+    use_historical_data: true
+    confidence_threshold: 0.6
+    max_prediction_history: 1000
+    prediction_accuracy_tracking: true
+
+# AI模型管理配置
+ai_model_management:
+  enabled: true
+  
+  # 数据库配置
+  database_path: "./data/ai_models.db"
+  models_directory: "./models"
+  
+  # 性能监控配置
+  performance_history_size: 1000
+  performance_window_hours: 24
+  
+  # 自动切换配置
+  auto_switch_enabled: true
+  auto_switch_threshold: 0.8
+  
+  # 模型类型配置
+  supported_model_types:
+    - "text_generation"
+    - "code_generation"
+    - "text_analysis"
+    - "multimodal"
+    - "embedding"
+  
+  # 默认模型配置
+  default_models:
+    text_generation:
+      model_name: "claude-3-sonnet"
+      version: "20240229"
+      provider: "anthropic"
+      parameters:
+        max_tokens: 4000
+        temperature: 0.7
+    
+    code_generation:
+      model_name: "claude-3-sonnet"
+      version: "20240229"
+      provider: "anthropic"
+      parameters:
+        max_tokens: 6000
+        temperature: 0.3
+    
+    text_analysis:
+      model_name: "claude-3-haiku"
+      version: "20240307"
+      provider: "anthropic"
+      parameters:
+        max_tokens: 2000
+        temperature: 0.5
+
+# 多模态AI支持配置
+multimodal_ai:
+  enabled: true
+  
+  # 支持的媒体类型
+  supported_media_types:
+    - "image"
+    - "pdf"
+    - "word"
+    - "text"
+  
+  # 输出目录
+  output_directory: "./outputs/multimodal"
+  
+  # 图像处理配置
+  image_processing:
+    max_image_size: 10  # MB
+    supported_formats:
+      - "jpg"
+      - "jpeg"
+      - "png"
+      - "gif"
+      - "bmp"
+      - "tiff"
+      - "webp"
+    enhancement_options:
+      brightness_factor: 1.2
+      contrast_factor: 1.5
+      sharpness_factor: 2.0
+  
+  # 文档处理配置
+  document_processing:
+    max_file_size: 50  # MB
+    supported_formats:
+      pdf: [".pdf"]
+      word: [".docx", ".doc"]
+      text: [".txt", ".md", ".json", ".xml", ".csv"]
+    extraction_options:
+      extract_tables: true
+      extract_images: false
+      preserve_formatting: true
+  
+  # AI分析配置
+  ai_analysis:
+    default_prompt: "请分析这个媒体文件的内容和特征"
+    max_tokens: 1000
+    temperature: 0.3
+    use_ai_for_all_types: true
+  
+  # 性能配置
+  performance:
+    max_concurrent_processes: 3
+    timeout_per_file: 300  # 秒
+    memory_limit: "2GB"
+
+# 机器学习集成配置
+machine_learning:
+  enabled: true
+  
+  # 数据库配置
+  database_path: "./data/ml_service.db"
+  models_directory: "./models"
+  
+  # 预测模型配置
+  prediction:
+    min_training_samples: 10
+    model_type: "random_forest"
+    n_estimators: 100
+    random_state: 42
+    confidence_threshold: 0.7
+    prediction_window_days: 90
+  
+  # 异常检测配置
+  anomaly_detection:
+    enabled: true
+    detection_method: "statistical"
+    duration_threshold: 2.0  # 标准差倍数
+    error_threshold: 2.0
+    retry_threshold: 3
+    min_samples_for_detection: 10
+  
+  # 智能调度配置
+  scheduling:
+    enabled: true
+    optimization_algorithm: "genetic"
+    population_size: 50
+    generations: 100
+    mutation_rate: 0.1
+    crossover_rate: 0.8
+  
+  # A/B测试配置
+  ab_testing:
+    enabled: true
+    min_sample_size: 100
+    confidence_level: 0.95
+    max_test_duration_days: 30
+    traffic_allocation_method: "hash_based"
+    result_storage_days: 90
+  
+  # 模型管理配置
+  model_management:
+    auto_save_interval_hours: 24
+    model_versioning: true
+    backup_models: true
+    model_validation: true
+  
+  # 数据管理配置
+  data_management:
+    cleanup_interval_days: 7
+    retention_days: 90
+    max_database_size_mb: 1000
+    compression_enabled: true
+  
+  # 性能配置
+  performance:
+    max_concurrent_predictions: 10
+    batch_size: 100
+    cache_size: 1000
+    timeout_seconds: 300

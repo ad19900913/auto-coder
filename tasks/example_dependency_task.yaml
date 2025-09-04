@@ -1,0 +1,161 @@
+# 依赖管理示例任务配置
+
+# 数据预处理任务
+data_preprocessing:
+  name: "数据预处理"
+  description: "预处理原始数据，为后续任务做准备"
+  type: "custom"
+  enabled: true
+  priority: 1
+  resource_requirements:
+    cpu: 20
+    memory: 1024
+    disk: 1000
+  schedule:
+    type: "cron"
+    cron_expression: "0 0 * * *"  # 每天执行
+  dependencies: []  # 无依赖
+  parameters:
+    input_path: "/data/raw"
+    output_path: "/data/processed"
+    batch_size: 1000
+
+# 特征工程任务
+feature_engineering:
+  name: "特征工程"
+  description: "从预处理数据中提取特征"
+  type: "custom"
+  enabled: true
+  priority: 2
+  resource_requirements:
+    cpu: 30
+    memory: 2048
+    disk: 2000
+  schedule:
+    type: "cron"
+    cron_expression: "0 2 * * *"  # 每天2点执行
+  dependencies:
+    - task_id: "data_preprocessing"
+      type: "required"
+      timeout: 3600  # 1小时超时
+  parameters:
+    input_path: "/data/processed"
+    output_path: "/data/features"
+    feature_config: "config/features.yaml"
+
+# 模型训练任务
+model_training:
+  name: "模型训练"
+  description: "训练机器学习模型"
+  type: "custom"
+  enabled: true
+  priority: 3
+  resource_requirements:
+    cpu: 50
+    memory: 4096
+    disk: 5000
+    gpu: 1
+  schedule:
+    type: "cron"
+    cron_expression: "0 4 * * *"  # 每天4点执行
+  dependencies:
+    - task_id: "feature_engineering"
+      type: "required"
+      timeout: 7200  # 2小时超时
+    - task_id: "data_preprocessing"
+      type: "required"
+      timeout: 3600
+  parameters:
+    input_path: "/data/features"
+    model_path: "/models"
+    hyperparameters: "config/hyperparams.yaml"
+
+# 模型评估任务
+model_evaluation:
+  name: "模型评估"
+  description: "评估模型性能"
+  type: "custom"
+  enabled: true
+  priority: 4
+  resource_requirements:
+    cpu: 20
+    memory: 1024
+    disk: 1000
+  schedule:
+    type: "cron"
+    cron_expression: "0 6 * * *"  # 每天6点执行
+  dependencies:
+    - task_id: "model_training"
+      type: "required"
+      timeout: 1800  # 30分钟超时
+  parameters:
+    model_path: "/models"
+    test_data_path: "/data/test"
+    evaluation_metrics: ["accuracy", "precision", "recall", "f1"]
+
+# 模型部署任务（条件依赖）
+model_deployment:
+  name: "模型部署"
+  description: "部署性能良好的模型"
+  type: "custom"
+  enabled: true
+  priority: 5
+  resource_requirements:
+    cpu: 15
+    memory: 512
+    disk: 500
+  schedule:
+    type: "cron"
+    cron_expression: "0 8 * * *"  # 每天8点执行
+  dependencies:
+    - task_id: "model_evaluation"
+      type: "conditional"
+      timeout: 1800
+      condition: "lambda: model_accuracy > 0.85"  # 模型准确率大于85%才部署
+  parameters:
+    model_path: "/models"
+    deployment_path: "/deploy"
+    deployment_config: "config/deployment.yaml"
+
+# 监控报告任务（可选依赖）
+monitoring_report:
+  name: "监控报告"
+  description: "生成系统监控报告"
+  type: "custom"
+  enabled: true
+  priority: 6
+  resource_requirements:
+    cpu: 10
+    memory: 512
+    disk: 500
+  schedule:
+    type: "cron"
+    cron_expression: "0 10 * * *"  # 每天10点执行
+  dependencies:
+    - task_id: "model_deployment"
+      type: "optional"  # 可选依赖，即使部署失败也会执行
+      timeout: 900
+  parameters:
+    report_path: "/reports"
+    report_template: "templates/monitoring_report.html"
+    email_recipients: ["admin@example.com"]
+
+# 数据清理任务（并行执行）
+data_cleanup:
+  name: "数据清理"
+  description: "清理临时数据和旧文件"
+  type: "custom"
+  enabled: true
+  priority: 1
+  resource_requirements:
+    cpu: 5
+    memory: 256
+    disk: 100
+  schedule:
+    type: "cron"
+    cron_expression: "0 12 * * *"  # 每天12点执行
+  dependencies: []  # 可以与其他任务并行执行
+  parameters:
+    temp_path: "/tmp"
+    retention_days: 7
+    cleanup_patterns: ["*.log", "*.tmp", "*.cache"]
