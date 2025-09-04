@@ -356,3 +356,4 @@ logs/
 
 # 临时文件
 system_status.json
+.specstory
