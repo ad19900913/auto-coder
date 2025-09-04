@@ -7,6 +7,9 @@ from typing import Dict, Any, Optional
 from .ai_service import AIService, ClaudeService, DeepSeekService, GeminiService, CursorService
 from .git_service import GitService, GitHubService, GitLabService
 from .notify_service import NotifyService
+from .incremental_code_service import IncrementalCodeService
+from .complex_refactor_service import ComplexRefactorService
+from .mcp_service import MCPService, MCPToolManager
 
 
 class ServiceFactory:
@@ -159,6 +162,20 @@ class ServiceFactory:
         
         # 创建通知服务
         services['notify_service'] = self.create_notify_service()
+        
+        # 创建增量代码服务
+        services['incremental_code_service'] = IncrementalCodeService()
+        
+        # 创建复杂重构服务
+        services['complex_refactor_service'] = ComplexRefactorService()
+        
+        # 创建MCP服务 - 从全局配置加载
+        mcp_config = self.config_manager.global_config.get('mcp', {})
+        services['mcp_service'] = MCPService(mcp_config)
+        services['mcp_tool_manager'] = MCPToolManager()
+        
+        # 设置AI服务的MCP工具管理器
+        services['ai_service'].set_mcp_tool_manager(services['mcp_tool_manager'])
         
         return services
     

@@ -23,6 +23,7 @@ python-pptx>=0.6.21
 # 日志和工具
 colorlog>=6.7.0
 python-dateutil>=2.8.0
+networkx>=3.0.0
 
 # 开发和测试
 pytest>=7.0.0

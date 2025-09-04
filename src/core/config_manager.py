@@ -50,6 +50,9 @@ class ConfigManager:
             # 加载全局配置
             self._load_global_config()
             
+            # 加载MCP配置
+            self._load_mcp_config()
+            
             # 加载编码规范
             self._load_coding_standards()
             
@@ -126,6 +129,46 @@ class ConfigManager:
         except Exception as e:
             self.logger.error(f"全局配置加载失败: {e}")
             self.global_config = self._get_default_global_config()
+    
+    def _load_mcp_config(self):
+        """加载MCP配置文件"""
+        mcp_config_path = self.config_dir / "mcp_config.yaml"
+        
+        if not mcp_config_path.exists():
+            self.logger.info(f"MCP配置文件不存在: {mcp_config_path}")
+            return
+        
+        try:
+            with open(mcp_config_path, 'r', encoding='utf-8') as f:
+                mcp_config = yaml.safe_load(f)
+            
+            # 处理环境变量
+            self._process_environment_variables_in_config(mcp_config)
+            
+            # 将MCP配置合并到全局配置中
+            if 'mcp' not in self.global_config:
+                self.global_config['mcp'] = {}
+            self.global_config['mcp'].update(mcp_config)
+            
+            self.logger.info("MCP配置加载成功")
+        except Exception as e:
+            self.logger.error(f"MCP配置加载失败: {e}")
+    
+    def _process_environment_variables_in_config(self, config):
+        """处理配置中的环境变量替换"""
+        def replace_env_vars(obj):
+            if isinstance(obj, dict):
+                for key, value in obj.items():
+                    obj[key] = replace_env_vars(value)
+            elif isinstance(obj, list):
+                for i, value in enumerate(obj):
+                    obj[i] = replace_env_vars(value)
+            elif isinstance(obj, str) and obj.startswith("${") and obj.endswith("}"):
+                env_var = obj[2:-1]
+                return os.getenv(env_var, obj)
+            return obj
+        
+        return replace_env_vars(config)
     
     def _load_coding_standards(self):
         """加载编码规范文件"""

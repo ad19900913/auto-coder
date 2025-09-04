@@ -18,6 +18,9 @@
 - **✅ 配置验证**: 自动验证配置文件完整性和有效性
 - **🎯 服务工厂**: 统一服务实例创建、缓存和依赖注入
 - **📋 模板系统**: 工作流模板继承、AI提示词模板管理
+- **🔧 增量修改**: 支持读取现有代码并进行增量修改，保持代码结构
+- **🏗️ 复杂重构**: 支持大型项目的复杂重构分析，包括项目结构分析、依赖关系分析、重构计划生成
+- **🔧 MCP服务**: 支持Model Context Protocol服务，AI可以使用外部工具和API
 
 ## 🏗️ 系统架构
 
@@ -38,7 +41,10 @@
 │   ├── 服务工厂 (ServiceFactory) - 统一服务实例创建和缓存
 │   ├── AI服务 (AIService) - Claude、DeepSeek、Gemini、Cursor等AI服务抽象
 │   ├── Git服务 (GitService) - GitHub、GitLab等Git平台抽象
-│   └── 通知服务 (NotifyService) - 多渠道通知服务
+│   ├── 通知服务 (NotifyService) - 多渠道通知服务
+│   ├── 增量代码服务 (IncrementalCodeService) - 增量代码修改服务
+│   ├── 复杂重构服务 (ComplexRefactorService) - 复杂重构分析服务
+│   └── MCP服务 (MCPService) - Model Context Protocol服务
 ├── 任务执行器 (src/tasks/)
 │   ├── 编码任务执行器 (CodingTaskExecutor)
 │   ├── 代码审查任务执行器 (ReviewTaskExecutor)
@@ -246,6 +252,20 @@ schedule:
   type: "cron"
   cron_expressions: ["0 9 * * *"]  # 每天上午9点执行
   timezone: "UTC+8"
+
+# 编码任务配置
+coding:
+  # 完整生成模式
+  incremental_mode: false  # 完整生成模式
+  project_path: "outputs/example_project"
+  branch_name: "feature/ai-generated-code"
+  prompt: "创建一个Python Web API服务"
+  
+  # 增量修改模式
+  # incremental_mode: true  # 启用增量修改
+  # target_file: "src/services/example_service.py"  # 要修改的目标文件
+  # language: "python"  # 编程语言
+  # prompt: "为现有类添加新的方法"
 
 # 编码任务特定配置
 coding:
@@ -471,6 +491,487 @@ python test_email.py
 - **文档生成**: 推荐使用 **Claude**，文档结构清晰
 - **IDE集成**: 推荐使用 **Cursor**，代码理解能力强
 - **自定义任务**: 根据任务特点选择合适的服务
+
+## 🔧 增量代码修改功能
+
+### 功能概述
+
+系统支持**增量代码修改**功能，可以读取现有代码文件，分析代码结构，并根据AI提示进行精确的增量修改，而不是重新生成整个文件。
+
+### 核心特性
+
+- **📖 代码读取**: 自动读取现有代码文件内容
+- **🔍 结构分析**: 分析代码结构（类、函数、导入等）
+- **🤖 AI智能修改**: 基于现有代码结构进行精确修改
+- **💾 自动备份**: 修改前自动创建备份文件
+- **📊 差异报告**: 生成详细的代码变更报告
+- **✅ 语法验证**: 验证修改后代码的语法正确性
+- **🔄 版本控制**: 支持Git版本控制集成
+
+### 使用场景
+
+1. **功能扩展**: 为现有类添加新方法
+2. **Bug修复**: 修复现有代码中的问题
+3. **性能优化**: 优化现有代码的性能
+4. **代码重构**: 重构现有代码结构
+5. **依赖更新**: 更新导入和依赖关系
+
+### 配置示例
+
+#### 1. 增量修改模式配置
+
+```yaml
+# config/tasks/incremental_coding_example.yaml
+task_id: incremental_coding_example
+task_type: coding
+enabled: true
+
+coding:
+  # 启用增量修改模式
+  incremental_mode: true
+  target_file: "src/services/example_service.py"  # 要修改的目标文件
+  language: "python"  # 编程语言
+  
+  # 项目配置
+  project_path: "outputs/incremental_coding_example"
+  branch_name: "feature/incremental-update"
+  
+  # 修改提示
+  prompt: |
+    请为现有的ExampleService类添加以下功能：
+    1. 添加一个新的方法calculate_average，用于计算数字列表的平均值
+    2. 在现有的process_data方法中添加错误处理逻辑
+    3. 添加一个新的属性max_retries，默认值为3
+    4. 确保保持现有的代码结构和风格
+```
+
+#### 2. 支持的编程语言
+
+- **Python**: 完整的AST分析支持
+- **JavaScript**: 基础结构分析支持
+- **Java**: 基础结构分析支持
+- **其他语言**: 通用结构分析支持
+
+### 工作流程
+
+1. **读取现有代码**: 系统读取目标文件内容
+2. **分析代码结构**: 解析类、函数、导入等结构信息
+3. **生成AI提示**: 基于现有代码和修改要求生成精确的AI提示
+4. **AI智能修改**: AI根据提示进行增量修改
+5. **应用修改**: 将修改应用到原文件
+6. **创建备份**: 自动创建备份文件
+7. **生成报告**: 生成详细的变更报告
+8. **语法验证**: 验证修改后代码的语法正确性
+
+### 安全特性
+
+- **自动备份**: 每次修改前自动创建备份文件
+- **差异报告**: 详细记录所有变更内容
+- **语法验证**: 确保修改后代码的语法正确性
+- **版本控制**: 支持Git版本控制，可回滚变更
+
+### 测试增量修改功能
+
+运行测试脚本验证增量修改功能：
+
+```bash
+# 运行增量修改测试
+python test_incremental_code.py
+```
+
+测试脚本会：
+1. 读取示例代码文件
+2. 分析代码结构
+3. 生成增量修改提示
+4. 模拟AI修改过程
+5. 应用修改并生成报告
+6. 验证语法正确性
+
+## 🏗️ 复杂重构功能
+
+系统支持**复杂重构分析**功能，可以对大型项目进行深度的架构分析，生成详细的重构计划，帮助开发者进行系统性的代码重构。
+
+### 功能特性
+
+- **📊 项目结构分析**: 分析项目文件结构、模块组织
+- **🔗 依赖关系分析**: 构建依赖图，识别循环依赖和强连通分量
+- **📈 复杂度分析**: 计算代码复杂度指标，识别重构热点
+- **📋 重构计划生成**: 基于分析结果生成详细的重构计划
+- **⚙️ 重构步骤执行**: 模拟重构步骤的执行过程
+- **📊 风险评估**: 评估重构的风险等级和影响范围
+- **⏱️ 工作量估算**: 估算重构工作量和时间成本
+
+### 使用场景
+
+1. **架构重构**: 大型项目的架构级重构
+2. **模块拆分**: 拆分过大的模块和类
+3. **依赖优化**: 优化模块间的依赖关系
+4. **性能重构**: 识别和重构性能瓶颈
+5. **代码质量提升**: 提升整体代码质量
+
+### 配置示例
+
+#### 1. 复杂重构模式配置
+
+```yaml
+# config/tasks/complex_refactor_example.yaml
+task_id: complex_refactor_example
+task_type: coding
+enabled: true
+
+coding:
+  # 启用复杂重构模式
+  complex_refactor_mode: true
+  refactor_request: |
+    对项目进行架构级重构，主要包括：
+    1. 拆分大型服务类，提高代码的可维护性
+    2. 提取公共组件，减少代码重复
+    3. 优化数据库访问层，提高性能
+    4. 重构API接口，提高一致性
+    5. 优化错误处理机制，提高系统稳定性
+  
+  # 项目配置
+  project_path: "outputs/complex_refactor_example"
+  branch_name: "feature/architecture-refactor"
+  
+  # 输出文件配置
+  output_file: "refactor_analysis_report.md"
+  
+  # 编码提示（复杂重构模式下主要用于生成报告）
+  prompt: |
+    请分析项目结构并生成详细的重构计划，包括：
+    - 项目复杂度分析
+    - 重构热点识别
+    - 分步重构计划
+    - 风险评估
+    - 工作量估算
+
+# AI服务配置
+ai:
+  provider: "deepseek"  # 使用DeepSeek AI服务进行复杂分析
+  model: "deepseek-chat"
+  max_tokens: 4000
+  temperature: 0.1
+
+# 任务参数
+parameters:
+  max_retries: 3
+  timeout: 600  # 复杂重构需要更长时间
+  backup_enabled: true
+  include_patterns: ["*.py", "*.java", "*.js", "*.ts"]  # 包含的文件类型
+  exclude_patterns: ["*/node_modules/*", "*/venv/*", "*/__pycache__/*"]  # 排除的目录
+```
+
+#### 2. 支持的分析类型
+
+- **Python项目**: 完整的AST分析，支持类、函数、导入分析
+- **JavaScript项目**: 基础结构分析，支持ES6+语法
+- **Java项目**: 基础结构分析，支持类和包结构
+- **混合项目**: 支持多语言混合项目的分析
+
+### 分析能力
+
+#### 1. 项目结构分析
+
+- **文件扫描**: 扫描项目中的所有代码文件
+- **模块识别**: 识别项目的模块组织结构
+- **依赖图构建**: 构建文件间的依赖关系图
+- **复杂度计算**: 计算每个文件的复杂度指标
+
+#### 2. 重构热点识别
+
+- **高复杂度文件**: 识别复杂度过高的文件
+- **循环依赖**: 识别模块间的循环依赖
+- **重复代码**: 识别重复的代码模式
+- **性能瓶颈**: 识别潜在的性能问题
+
+#### 3. 重构计划生成
+
+- **分步重构**: 生成详细的重构步骤
+- **风险评估**: 评估每个重构步骤的风险
+- **工作量估算**: 估算重构所需的工作量
+- **测试策略**: 生成重构后的测试策略
+
+### 工作流程
+
+1. **项目扫描**: 扫描项目文件结构
+2. **代码分析**: 分析每个文件的代码结构
+3. **依赖分析**: 构建依赖关系图
+4. **热点识别**: 识别重构热点
+5. **计划生成**: 生成详细的重构计划
+6. **风险评估**: 评估重构风险
+7. **报告生成**: 生成重构分析报告
+
+### 测试复杂重构功能
+
+运行测试脚本验证复杂重构功能：
+
+```bash
+# 运行复杂重构测试
+python test_complex_refactor.py
+```
+
+测试脚本会：
+1. 创建测试项目结构
+2. 分析项目结构
+3. 生成重构计划
+4. 执行重构步骤
+5. 生成重构报告
+
+### 输出报告
+
+复杂重构功能会生成详细的重构分析报告，包括：
+
+- **项目概览**: 项目基本信息和统计
+- **复杂度分析**: 详细的复杂度指标
+- **重构热点**: 识别出的重构热点列表
+- **重构计划**: 详细的重构步骤计划
+- **风险评估**: 重构风险等级和影响分析
+- **工作量估算**: 预估的工作量和时间成本
+
+## 🔧 MCP服务功能
+
+系统支持**Model Context Protocol (MCP)** 服务，允许AI使用外部工具和API，大大扩展了AI的能力范围。
+
+### 功能特性
+
+- **🔧 工具集成**: 集成各种外部工具和API
+- **🛠️ 自定义工具**: 支持注册自定义工具函数
+- **🔍 工具发现**: 自动发现和注册MCP服务器工具
+- **⚡ 工具调用**: AI可以直接调用MCP工具
+- **🔒 安全控制**: 支持工具调用权限和安全沙箱
+- **📊 工具管理**: 统一的工具管理和调用接口
+- **🔄 自动加载**: 系统启动时自动读取并注册配置的MCP服务
+
+### 自动配置加载
+
+- **全局配置**: `config/mcp_config.yaml` 定义全局MCP服务
+- **任务级配置**: 任务YAML文件中的 `mcp` 部分定义任务特定服务
+- **自动加载**: 系统启动时自动读取并注册配置的MCP服务
+- **环境变量**: 支持在配置中使用环境变量替换
+
+### 支持的MCP服务器类型
+
+#### 1. 文件系统服务器
+- **read_file**: 读取文件内容
+- **write_file**: 写入文件内容
+- **list_directory**: 列出目录内容
+
+#### 2. 数据库服务器
+- **query_database**: 执行数据库查询
+- **execute_sql**: 执行SQL语句
+
+#### 3. 网络服务器
+- **http_request**: 发送HTTP请求
+- **api_call**: 调用外部API
+
+#### 4. 自定义服务器
+- **自定义工具**: 支持任意自定义工具函数
+
+### 使用场景
+
+1. **文件操作**: AI可以读取、写入、分析文件
+2. **数据查询**: AI可以查询数据库获取信息
+3. **API调用**: AI可以调用外部API服务
+4. **代码分析**: AI可以使用代码分析工具
+5. **项目管理**: AI可以执行Git操作等
+
+### 配置示例
+
+#### 1. MCP服务配置
+
+```yaml
+# config/mcp_config.yaml
+mcp_services:
+  # 文件系统MCP服务器
+  filesystem_server:
+    type: "filesystem"
+    enabled: true
+    root_path: "./workspace"
+    allowed_extensions: [".py", ".js", ".java", ".md", ".txt", ".json", ".yaml", ".yml"]
+    max_file_size: 10485760  # 10MB
+    
+  # 数据库MCP服务器
+  database_server:
+    type: "database"
+    enabled: false
+    connection_string: "sqlite:///./data.db"
+    allowed_tables: ["users", "projects", "tasks"]
+    
+  # 自定义MCP服务器
+  custom_server:
+    type: "custom"
+    enabled: true
+    script_path: "./mcp_scripts/custom_server.py"
+    environment_variables:
+      CUSTOM_API_KEY: "${CUSTOM_API_KEY}"
+      CUSTOM_BASE_URL: "https://api.custom.com"
+
+# MCP工具配置
+mcp_tools:
+  # 默认启用的工具
+  default_tools:
+    - "filesystem_server.read_file"
+    - "filesystem_server.write_file"
+    - "filesystem_server.list_directory"
+    
+  # 自定义工具
+  custom_tools:
+    code_analyzer:
+      description: "分析代码质量和复杂度"
+      parameters:
+        file_path: {"type": "string", "description": "要分析的代码文件路径"}
+        analysis_type: {"type": "string", "description": "分析类型", "default": "quality"}
+```
+
+#### 2. MCP任务配置
+
+```yaml
+# config/tasks/mcp_tool_example.yaml
+task_id: mcp_tool_example
+task_type: custom
+enabled: true
+
+custom:
+  # 启用MCP工具模式
+  mcp_tool_mode: true
+  
+  # 要使用的MCP工具
+  mcp_tools:
+    - "filesystem_server.read_file"
+    - "filesystem_server.write_file"
+    - "filesystem_server.list_directory"
+    - "custom.code_analyzer"
+    - "custom.project_scanner"
+  
+  # 任务提示
+  prompt: |
+    请使用MCP工具完成以下任务：
+    1. 扫描当前项目结构
+    2. 分析主要代码文件的质量
+    3. 生成项目分析报告
+    4. 将报告保存到outputs目录
+
+# MCP服务配置
+mcp:
+  servers:
+    filesystem_server:
+      type: "filesystem"
+      root_path: "./"
+      allowed_extensions: [".py", ".js", ".java", ".md", ".txt"]
+    
+    custom:
+      type: "custom"
+      tools:
+        code_analyzer:
+          description: "分析代码质量"
+          parameters:
+            file_path: {"type": "string", "description": "要分析的代码文件路径"}
+            analysis_type: {"type": "string", "description": "分析类型", "default": "quality"}
+```
+
+### 工具调用方式
+
+#### 1. 通过AI服务调用
+
+```python
+# AI服务可以直接调用MCP工具
+result = ai_service.call_mcp_tool('filesystem_server.read_file', {
+    'path': 'src/main.py'
+})
+
+# 获取可用工具
+tools = ai_service.get_available_mcp_tools()
+```
+
+#### 2. 通过工具管理器调用
+
+```python
+# 直接使用工具管理器
+tool_manager = MCPToolManager()
+
+# 调用MCP工具
+result = tool_manager.call_tool('filesystem_server.read_file', {
+    'path': 'src/main.py'
+})
+
+# 注册自定义工具
+def custom_analyzer(file_path: str):
+    return {'quality_score': 85, 'suggestions': ['添加注释']}
+
+tool_manager.register_tool('custom_analyzer', custom_analyzer, "分析代码质量")
+
+# 调用自定义工具
+result = tool_manager.call_tool('custom_analyzer', {
+    'file_path': 'src/main.py'
+})
+```
+
+### 安全特性
+
+- **权限控制**: 每个工具都有明确的权限配置
+- **沙箱执行**: 工具在安全沙箱中执行
+- **审计日志**: 记录所有工具调用操作
+- **超时控制**: 防止工具执行时间过长
+- **资源限制**: 限制内存和网络访问
+
+### 测试MCP功能
+
+运行测试脚本验证MCP功能：
+
+```bash
+# 运行MCP服务测试
+python test_mcp_service.py
+```
+
+测试脚本会：
+1. 创建MCP服务实例
+2. 注册文件系统MCP服务器
+3. 发现可用工具
+4. 测试文件读取、写入、目录列表功能
+5. 测试自定义工具注册和调用
+6. 验证工具管理器功能
+
+### 扩展MCP功能
+
+#### 1. 添加新的MCP服务器
+
+```python
+# 创建新的MCP服务器类型
+class CustomMCPServer:
+    def __init__(self, config):
+        self.config = config
+    
+    def list_tools(self):
+        return [
+            {
+                'name': 'custom_tool',
+                'description': '自定义工具',
+                'parameters': {
+                    'param1': {'type': 'string', 'description': '参数1'}
+                }
+            }
+        ]
+    
+    def call_tool(self, tool_name, parameters):
+        if tool_name == 'custom_tool':
+            return self._execute_custom_tool(parameters)
+        return {'error': f'工具不存在: {tool_name}'}
+```
+
+#### 2. 注册自定义工具
+
+```python
+# 注册自定义工具函数
+def my_custom_tool(param1: str, param2: int = 10):
+    """自定义工具函数"""
+    return {
+        'result': f'处理结果: {param1}, 数值: {param2}',
+        'timestamp': datetime.now().isoformat()
+    }
+
+tool_manager.register_tool('my_custom_tool', my_custom_tool, "自定义工具描述")
+```
 
 ## 📚 文档
 

@@ -25,9 +25,20 @@ class AIService(ABC):
         self.api_key = config.get('api_key', '')
         self.base_url = config.get('base_url', '')
         self.model = config.get('model', '')
+        self.mcp_tool_manager = None  # MCP工具管理器
         
         if not self.api_key:
             raise ValueError("API密钥不能为空")
+    
+    def set_mcp_tool_manager(self, mcp_tool_manager):
+        """
+        设置MCP工具管理器
+        
+        Args:
+            mcp_tool_manager: MCP工具管理器实例
+        """
+        self.mcp_tool_manager = mcp_tool_manager
+        self.logger.info("MCP工具管理器已设置")
     
     @abstractmethod
     def generate_code(self, prompt: str, task_type: str = "coding", **kwargs) -> str:
@@ -87,6 +98,34 @@ class AIService(ABC):
             任务执行结果
         """
         pass
+    
+    def call_mcp_tool(self, tool_name: str, parameters: Dict[str, Any]) -> Any:
+        """
+        调用MCP工具
+        
+        Args:
+            tool_name: 工具名称
+            parameters: 工具参数
+            
+        Returns:
+            工具执行结果
+        """
+        if not self.mcp_tool_manager:
+            raise RuntimeError("MCP工具管理器未设置")
+        
+        return self.mcp_tool_manager.call_tool(tool_name, parameters)
+    
+    def get_available_mcp_tools(self) -> Dict[str, Any]:
+        """
+        获取可用的MCP工具
+        
+        Returns:
+            可用工具信息
+        """
+        if not self.mcp_tool_manager:
+            return {}
+        
+        return self.mcp_tool_manager.list_all_tools()
 
 
 class ClaudeService(AIService):

@@ -1,0 +1,79 @@
+task_id: mcp_tool_example
+task_type: custom
+enabled: true
+schedule:
+  type: cron
+  cron: "0 10 * * *"  # 每天上午10点执行
+
+# 自定义任务配置
+custom:
+  # 启用MCP工具模式
+  mcp_tool_mode: true
+  
+  # 要使用的MCP工具
+  mcp_tools:
+    - "filesystem_server.read_file"
+    - "filesystem_server.write_file"
+    - "filesystem_server.list_directory"
+    - "custom.code_analyzer"
+    - "custom.project_scanner"
+  
+  # 任务提示
+  prompt: |
+    请使用MCP工具完成以下任务：
+    1. 扫描当前项目结构
+    2. 分析主要代码文件的质量
+    3. 生成项目分析报告
+    4. 将报告保存到outputs目录
+    
+    请使用以下MCP工具：
+    - filesystem_server.list_directory: 扫描目录结构
+    - filesystem_server.read_file: 读取代码文件
+    - custom.code_analyzer: 分析代码质量
+    - filesystem_server.write_file: 保存分析报告
+
+# AI服务配置
+ai:
+  provider: "deepseek"
+  model: "deepseek-chat"
+  max_tokens: 4000
+  temperature: 0.1
+
+# MCP服务配置
+mcp:
+  # 启用的MCP服务器
+  servers:
+    filesystem_server:
+      type: "filesystem"
+      root_path: "./"
+      allowed_extensions: [".py", ".js", ".java", ".md", ".txt"]
+    
+    custom:
+      type: "custom"
+      tools:
+        code_analyzer:
+          description: "分析代码质量和复杂度"
+          parameters:
+            file_path: {"type": "string", "description": "要分析的代码文件路径"}
+            analysis_type: {"type": "string", "description": "分析类型", "default": "quality"}
+        
+        project_scanner:
+          description: "扫描项目结构和依赖关系"
+          parameters:
+            project_path: {"type": "string", "description": "项目根路径"}
+            scan_type: {"type": "string", "description": "扫描类型", "default": "structure"}
+
+# 通知配置
+notifications:
+  channels:
+    - email
+  events:
+    - task_start
+    - task_success
+    - task_error
+
+# 任务参数
+parameters:
+  max_retries: 3
+  timeout: 300
+  output_dir: "outputs/mcp_analysis"

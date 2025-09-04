@@ -1,0 +1,90 @@
+# MCP服务配置示例
+mcp_services:
+  # 文件系统MCP服务器
+  filesystem_server:
+    type: "filesystem"
+    enabled: true
+    root_path: "./workspace"
+    allowed_extensions: [".py", ".js", ".java", ".md", ".txt", ".json", ".yaml", ".yml"]
+    max_file_size: 10485760  # 10MB
+    
+  # 数据库MCP服务器
+  database_server:
+    type: "database"
+    enabled: false
+    connection_string: "sqlite:///./data.db"
+    allowed_tables: ["users", "projects", "tasks"]
+    
+  # 网络MCP服务器
+  network_server:
+    type: "network"
+    enabled: false
+    allowed_domains: ["api.github.com", "api.openai.com"]
+    max_requests_per_minute: 60
+    
+  # 自定义MCP服务器
+  custom_server:
+    type: "custom"
+    enabled: true
+    script_path: "./mcp_scripts/custom_server.py"
+    environment_variables:
+      CUSTOM_API_KEY: "${CUSTOM_API_KEY}"
+      CUSTOM_BASE_URL: "https://api.custom.com"
+
+# MCP工具配置
+mcp_tools:
+  # 默认启用的工具
+  default_tools:
+    - "filesystem_server.read_file"
+    - "filesystem_server.write_file"
+    - "filesystem_server.list_directory"
+    
+  # 自定义工具
+  custom_tools:
+    code_analyzer:
+      description: "分析代码质量和复杂度"
+      parameters:
+        file_path: {"type": "string", "description": "要分析的代码文件路径"}
+        analysis_type: {"type": "string", "description": "分析类型", "default": "quality"}
+      
+    project_scanner:
+      description: "扫描项目结构和依赖关系"
+      parameters:
+        project_path: {"type": "string", "description": "项目根路径"}
+        scan_type: {"type": "string", "description": "扫描类型", "default": "structure"}
+      
+    git_operations:
+      description: "执行Git操作"
+      parameters:
+        operation: {"type": "string", "description": "Git操作类型", "enum": ["commit", "push", "pull", "branch"]}
+        message: {"type": "string", "description": "提交信息（可选）"}
+        branch: {"type": "string", "description": "分支名称（可选）"}
+
+# MCP安全配置
+mcp_security:
+  # 工具调用权限
+  tool_permissions:
+    filesystem_server:
+      read_file: ["workspace", "outputs", "config"]
+      write_file: ["outputs", "temp"]
+      list_directory: ["workspace", "outputs", "config"]
+    
+    database_server:
+      query_database: ["read"]
+      execute_sql: ["read", "write"]
+    
+    network_server:
+      http_request: ["get", "post"]
+    
+  # 沙箱配置
+  sandbox:
+    enabled: true
+    timeout: 30  # 秒
+    memory_limit: 512  # MB
+    network_access: false
+    
+  # 审计日志
+  audit_log:
+    enabled: true
+    log_file: "./logs/mcp_audit.log"
+    log_level: "INFO"

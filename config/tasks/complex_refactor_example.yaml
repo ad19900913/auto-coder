@@ -1,0 +1,66 @@
+task_id: complex_refactor_example
+task_type: coding
+enabled: true
+schedule:
+  type: cron
+  cron: "0 14 * * *"  # 每天下午2点执行
+
+# 编码任务配置
+coding:
+  # 复杂重构模式配置
+  complex_refactor_mode: true  # 启用复杂重构模式
+  refactor_request: |
+    对项目进行架构级重构，主要包括：
+    1. 拆分大型服务类，提高代码的可维护性
+    2. 提取公共组件，减少代码重复
+    3. 优化数据库访问层，提高性能
+    4. 重构API接口，提高一致性
+    5. 优化错误处理机制，提高系统稳定性
+  
+  # 项目配置
+  project_path: "outputs/complex_refactor_example"
+  branch_name: "feature/architecture-refactor"
+  base_branch: "main"
+  
+  # 输出文件配置
+  output_file: "refactor_analysis_report.md"
+  
+  # 编码提示（复杂重构模式下主要用于生成报告）
+  prompt: |
+    请分析项目结构并生成详细的重构计划，包括：
+    - 项目复杂度分析
+    - 重构热点识别
+    - 分步重构计划
+    - 风险评估
+    - 工作量估算
+
+# AI服务配置
+ai:
+  provider: "deepseek"  # 使用DeepSeek AI服务进行复杂分析
+  model: "deepseek-chat"
+  max_tokens: 4000
+  temperature: 0.1
+
+# Git服务配置
+git:
+  platform: "github"
+  repo_url: "https://github.com/your-username/your-repo.git"
+  username: "your-username"
+  email: "your-email@example.com"
+
+# 通知配置
+notifications:
+  channels:
+    - email
+  events:
+    - task_start
+    - task_success
+    - task_error
+
+# 任务参数
+parameters:
+  max_retries: 3
+  timeout: 600  # 复杂重构需要更长时间
+  backup_enabled: true
+  include_patterns: ["*.py", "*.java", "*.js", "*.ts"]  # 包含的文件类型
+  exclude_patterns: ["*/node_modules/*", "*/venv/*", "*/__pycache__/*"]  # 排除的目录
