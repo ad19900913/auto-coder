@@ -18,16 +18,8 @@ from src.core import (
 )
 from src.services import NotifyService
 
-# 尝试导入argcomplete以支持Tab补全
-try:
-    import argcomplete
-    ARGCOMPLETE_AVAILABLE = True
-except ImportError:
-    ARGCOMPLETE_AVAILABLE = False
-
 
 def setup_logging(verbose: bool = False):
-    """设置日志配置"""
     # 确保logs目录存在
     Path("logs").mkdir(exist_ok=True)
     
@@ -572,7 +564,4 @@ def version(ctx):
 
 
 if __name__ == '__main__':
-    # 如果argcomplete可用，启用Tab补全
-    if ARGCOMPLETE_AVAILABLE:
-        argcomplete.autocomplete(cli)
     cli()

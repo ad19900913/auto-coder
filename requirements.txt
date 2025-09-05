@@ -4,7 +4,6 @@ click==8.1.7
 APScheduler==3.10.4
 requests==2.31.0
 python-dotenv==1.0.0
-argcomplete==3.2.2
 
 # AI服务相关
 anthropic==0.18.0
