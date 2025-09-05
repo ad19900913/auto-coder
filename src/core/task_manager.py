@@ -92,73 +92,17 @@ class TaskManager:
     
     def _load_and_schedule_tasks(self):
         """加载并调度所有任务"""
-        try:
-            # 获取所有任务配置
-            task_configs = self.config_manager.get_all_task_configs()
-            
-            # 首先构建依赖图
-            self._build_dependency_graph(task_configs)
-            
-            # 检查循环依赖
-            cycles = self.dependency_manager.check_circular_dependencies()
-            if cycles:
-                self.logger.error(f"发现循环依赖，无法启动: {cycles}")
-                return
-            
-            # 获取执行顺序
-            execution_order = self.dependency_manager.get_execution_order()
-            if not execution_order:
-                self.logger.error("无法确定任务执行顺序")
-                return
-            
-            # 按执行顺序调度任务
-            for layer_index, task_layer in enumerate(execution_order):
-                for task_id in task_layer:
-                    try:
-                        task_config = task_configs.get(task_id)
-                        if not task_config:
-                            continue
-                        
-                        # 检查任务是否启用
-                        if not task_config.get('enabled', True):
-                            self.logger.info(f"任务已禁用，跳过: {task_id}")
-                            continue
-                        
-                        # 验证任务配置
-                        validation_errors = self.executor_factory.validate_task_config(task_id, task_config)
-                        if validation_errors:
-                            self.logger.error(f"任务配置验证失败 {task_id}: {validation_errors}")
-                            continue
-                        
-                        # 获取调度配置
-                        schedule_config = task_config.get('schedule', {})
-                        if not schedule_config:
-                            self.logger.warning(f"任务缺少调度配置，跳过: {task_id}")
-                            continue
-                        
-                        # 获取任务优先级
-                        priority = task_config.get('priority', 1)
-                        
-                        # 添加到调度器
-                        if self.scheduler.add_task(
-                            task_id=task_id,
-                            task_func=self._execute_task_wrapper,
-                            schedule_config=schedule_config,
-                            priority=priority,
-                            task_config=task_config
-                        ):
-                            self.logger.info(f"任务调度成功: {task_id} (层级: {layer_index})")
-                        else:
-                            self.logger.error(f"任务调度失败: {task_id}")
-                    
-                    except Exception as e:
-                        self.logger.error(f"加载任务配置失败 {task_id}: {e}")
-                        continue
-            
-            self.logger.info(f"任务加载完成，共加载 {len(task_configs)} 个任务，执行层级: {len(execution_order)}")
-            
-        except Exception as e:
-            self.logger.error(f"加载任务配置失败: {e}")
+        from .task_loader import TaskLoader
+        
+        # 使用任务加载器加载和调度任务
+        task_loader = TaskLoader(
+            config_manager=self.config_manager,
+            dependency_manager=self.dependency_manager,
+            executor_factory=self.executor_factory,
+            scheduler=self.scheduler
+        )
+        
+        task_loader.load_and_schedule_tasks()
     
     def _build_dependency_graph(self, task_configs: Dict[str, Any]):
         """构建依赖图"""
