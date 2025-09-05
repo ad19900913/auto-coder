@@ -6,7 +6,7 @@
 
 - **🤖 多AI服务支持**: 集成Claude、DeepSeek、Gemini、Cursor等主流AI服务，支持服务工厂模式
 - **📅 灵活调度**: 支持crontab表达式、间隔调度、指定时间调度
-- **🔧 多任务类型**: 编码、审查、文档、需求审查、自定义任务
+- **🔧 多任务类型**: 编码、审查、文档、需求审查、自定义任务、智能任务生成、多模态AI、机器学习集成
 - **⚙️ 工作流引擎**: 支持工作流模板、步骤控制、人工审批模式
 - **📊 状态管理**: 完整的任务状态跟踪和持久化
 - **🔄 并发执行**: 支持多任务并发执行，可配置最大工作线程数
@@ -21,6 +21,10 @@
 - **🔧 增量修改**: 支持读取现有代码并进行增量修改，保持代码结构
 - **🏗️ 复杂重构**: 支持大型项目的复杂重构分析，包括项目结构分析、依赖关系分析、重构计划生成
 - **🔧 MCP服务**: 支持Model Context Protocol服务，AI可以使用外部工具和API
+- **🧠 机器学习集成**: 预测模型、异常检测、智能调度、A/B测试
+- **🎨 多模态AI**: 图像处理、文档解析、媒体内容分析
+- **🤖 AI模型管理**: 模型版本控制、自动切换、性能监控
+- **💡 智能任务生成**: 基于自然语言的任务配置生成和优化
 
 ## 🏗️ 系统架构
 
@@ -36,6 +40,7 @@
 │   ├── 任务执行器工厂 (TaskExecutorFactory) - 任务执行器创建和注册
 │   ├── 任务管理器 (TaskManager) - 任务生命周期管理
 │   ├── 工作流引擎 (WorkflowEngine) - 工作流模板执行引擎
+│   ├── 依赖管理器 (DependencyManager) - 任务依赖关系管理
 │   └── 自定义异常 (exceptions) - 系统特定异常类型
 ├── 服务模块 (src/services/)
 │   ├── 服务工厂 (ServiceFactory) - 统一服务实例创建和缓存
@@ -44,27 +49,44 @@
 │   ├── 通知服务 (NotifyService) - 多渠道通知服务
 │   ├── 增量代码服务 (IncrementalCodeService) - 增量代码修改服务
 │   ├── 复杂重构服务 (ComplexRefactorService) - 复杂重构分析服务
-│   └── MCP服务 (MCPService) - Model Context Protocol服务
+│   ├── MCP服务 (MCPService) - Model Context Protocol服务
+│   ├── 智能任务服务 (IntelligentTaskService) - 智能任务生成和优化
+│   ├── AI模型管理器 (AIModelManager) - AI模型版本控制和性能监控
+│   ├── 多模态AI服务 (MultimodalAIService) - 图像、文档等多媒体处理
+│   └── 机器学习服务 (MachineLearningService) - 预测模型、异常检测、A/B测试
 ├── 任务执行器 (src/tasks/)
 │   ├── 编码任务执行器 (CodingTaskExecutor)
 │   ├── 代码审查任务执行器 (ReviewTaskExecutor)
 │   ├── 文档生成任务执行器 (DocTaskExecutor)
 │   ├── 需求审查任务执行器 (RequirementReviewTaskExecutor)
-│   └── 自定义任务执行器 (CustomTaskExecutor)
+│   ├── 自定义任务执行器 (CustomTaskExecutor)
+│   ├── 智能任务执行器 (IntelligentTaskExecutor)
+│   ├── AI模型管理执行器 (AIModelManagementExecutor)
+│   ├── 多模态AI执行器 (MultimodalAIExecutor)
+│   └── 机器学习执行器 (MachineLearningExecutor)
 ├── CLI接口 (src/cli/)
 │   └── 命令行管理工具
 ├── 工作流模板 (workflows/)
 │   ├── 基础模板 (base/) - 通用工作流步骤
 │   ├── 编码任务模板 (coding/) - 编码任务专用流程
 │   ├── 审查任务模板 (review/) - 审查任务专用流程
-│   └── 文档任务模板 (doc/) - 文档任务专用流程
+│   ├── 文档任务模板 (doc/) - 文档任务专用流程
+│   ├── 自定义任务模板 (custom/) - 自定义任务流程
+│   └── 需求审查模板 (requirement_review/) - 需求审查流程
 ├── AI提示词模板 (prompts/)
 │   ├── 编码任务提示词 (coding/) - 编码相关AI提示
 │   ├── 审查任务提示词 (review/) - 审查相关AI提示
-│   └── 文档任务提示词 (doc/) - 文档相关AI提示
+│   ├── 文档任务提示词 (doc/) - 文档相关AI提示
+│   ├── 自定义任务提示词 (custom/) - 自定义任务AI提示
+│   └── 需求审查提示词 (requirement_review/) - 需求审查AI提示
+├── 数据存储 (data/)
+│   ├── AI模型数据库 (ai_models.db) - AI模型管理数据
+│   └── 机器学习数据库 (ml_service.db) - 机器学习相关数据
+├── 模型存储 (models/) - 机器学习模型文件
 └── 配置和文档
     ├── 全局配置文件 (config/global_config.yaml)
     ├── 任务配置文件 (config/tasks/)
+    ├── MCP配置文件 (config/mcp_config.yaml)
     ├── 编码规范模板 (standards/)
     └── 系统设计文档 (docs/)
 ```
@@ -78,6 +100,10 @@
 | **文档生成** | AI文档生成 | 基于提示自动生成文档，支持Markdown、HTML等格式 |
 | **需求审查** | 需求与代码一致性分析 | 分析需求文档与代码实现的一致性，生成审查报告 |
 | **自定义任务** | 任意AI任务 | 支持任意场景的AI任务执行，灵活配置输出格式 |
+| **智能任务生成** | 自然语言任务配置 | 基于自然语言描述自动生成任务配置和优化建议 |
+| **AI模型管理** | 模型版本控制 | 注册、切换、监控AI模型，支持性能跟踪和自动切换 |
+| **多模态AI** | 多媒体内容处理 | 图像识别、文档解析、媒体内容分析和格式转换 |
+| **机器学习集成** | 智能预测和优化 | 任务执行预测、异常检测、A/B测试、智能调度 |
 
 ## 🚀 快速开始
 
@@ -728,6 +754,169 @@ python test_complex_refactor.py
 - **重构计划**: 详细的重构步骤计划
 - **风险评估**: 重构风险等级和影响分析
 - **工作量估算**: 预估的工作量和时间成本
+
+## 🧠 机器学习集成功能
+
+系统集成了强大的机器学习功能，提供智能预测、异常检测、A/B测试等能力。
+
+### 功能特性
+
+- **📊 任务执行预测**: 基于历史数据预测任务执行时间和成功率
+- **🚨 异常检测**: 自动检测任务执行异常，识别性能问题
+- **🧪 A/B测试**: 支持A/B测试框架，对比不同配置的效果
+- **⚡ 智能调度**: 基于机器学习的智能任务调度优化
+- **📈 性能监控**: 实时监控模型性能，自动切换最佳模型
+
+### 使用场景
+
+1. **任务优化**: 预测任务执行时间，优化资源配置
+2. **异常监控**: 自动检测异常任务，及时发现问题
+3. **配置对比**: 通过A/B测试找到最佳任务配置
+4. **智能调度**: 基于历史数据优化任务执行顺序
+
+### 配置示例
+
+```yaml
+# 机器学习集成任务配置
+task_id: ml_prediction_task
+name: "任务执行预测"
+type: "machine_learning"
+enabled: true
+
+machine_learning:
+  operation: "predict_task"
+  task_config:
+    type: "coding"
+    priority: 7
+    schedule:
+      type: "cron"
+      expression: "0 9 * * 1-5"
+    dependencies:
+      - task_id: "data_preparation"
+        type: "required"
+    resources:
+      cpu: 2
+      memory: 2048
+      disk: 500
+```
+
+## 🎨 多模态AI功能
+
+系统支持强大的多媒体内容处理能力，包括图像、文档等多种媒体类型。
+
+### 功能特性
+
+- **🖼️ 图像处理**: 图像识别、分析、文字提取、图像增强、特征提取
+- **📄 文档解析**: PDF、Word文档解析，文本提取、段落分析、表格提取
+- **📝 文本处理**: 文本分析、关键信息提取、智能摘要、内容分类
+- **🔄 格式转换**: 支持多种媒体格式之间的转换
+- **📊 批量处理**: 支持批量处理多个媒体文件
+
+### 支持的媒体类型
+
+- **图像**: JPG, PNG, GIF, BMP, TIFF, WebP
+- **PDF文档**: 完整的PDF解析和内容提取
+- **Word文档**: DOCX, DOC格式支持
+- **文本文件**: TXT, MD, JSON, XML, CSV
+
+### 配置示例
+
+```yaml
+# 多模态AI任务配置
+task_id: multimodal_analysis_task
+name: "多媒体内容分析"
+type: "multimodal_ai"
+enabled: true
+
+multimodal_ai:
+  operation: "process_single_file"
+  file_path: "./test_files/sample_image.jpg"
+  processing_type: "analysis"
+  options:
+    use_ai_analysis: true
+    max_tokens: 1000
+    temperature: 0.3
+    prompt: "请分析这张图片的内容"
+```
+
+## 🤖 AI模型管理功能
+
+系统提供完整的AI模型版本控制和性能监控能力。
+
+### 功能特性
+
+- **📝 模型注册**: 注册新的AI模型版本
+- **🔄 自动切换**: 根据性能自动切换最佳模型
+- **📊 性能监控**: 实时监控模型性能指标
+- **💾 版本控制**: 完整的模型版本管理
+- **📈 统计分析**: 详细的模型使用统计和分析
+
+### 支持的模型类型
+
+- **文本生成**: TEXT_GENERATION
+- **代码生成**: CODE_GENERATION
+- **文本分析**: TEXT_ANALYSIS
+- **多模态**: MULTIMODAL
+- **嵌入模型**: EMBEDDING
+
+### 配置示例
+
+```yaml
+# AI模型管理任务配置
+task_id: model_management_task
+name: "AI模型管理"
+type: "ai_model_management"
+enabled: true
+
+ai_model_management:
+  operation: "register_model"
+  model_config:
+    model_name: "claude-3-sonnet"
+    model_type: "text_generation"
+    version: "20240229"
+    provider: "anthropic"
+    api_key: "${ANTHROPIC_API_KEY}"
+    parameters:
+      max_tokens: 4000
+      temperature: 0.7
+    set_active: true
+```
+
+## 💡 智能任务生成功能
+
+系统支持基于自然语言的智能任务生成和优化。
+
+### 功能特性
+
+- **🗣️ 自然语言理解**: 理解自然语言描述的任务需求
+- **⚙️ 自动配置生成**: 自动生成完整的任务配置
+- **📊 执行预测**: 预测任务执行时间和成功率
+- **🎯 参数优化**: 智能优化任务参数配置
+- **📋 模板推荐**: 基于历史数据推荐任务模板
+
+### 使用场景
+
+1. **快速配置**: 用自然语言快速生成任务配置
+2. **参数优化**: 自动优化任务参数，提高执行效率
+3. **模板学习**: 从历史任务中学习最佳实践
+4. **智能建议**: 提供任务配置的优化建议
+
+### 配置示例
+
+```yaml
+# 智能任务生成配置
+task_id: intelligent_task_generation
+name: "智能任务生成"
+type: "intelligent_task"
+enabled: true
+
+intelligent_task:
+  description: "请为我生成一个用户管理系统的API文档生成任务，包括用户注册、登录、信息修改等功能"
+  context:
+    project_type: "web_application"
+    technology_stack: ["Spring Boot", "MySQL", "Redis"]
+    output_format: "markdown"
+```
 
 ## 🔧 MCP服务功能
 
