@@ -27,7 +27,6 @@ except ImportError:
 
 # 文档处理相关
 try:
-    import PyPDF2
     import docx
     from docx import Document
     DOCUMENT_PROCESSING_AVAILABLE = True
@@ -41,11 +40,8 @@ from .ai_service import AIService
 class MediaType(Enum):
     """媒体类型枚举"""
     IMAGE = "image"
-    PDF = "pdf"
     WORD = "word"
     TEXT = "text"
-    AUDIO = "audio"
-    VIDEO = "video"
 
 
 class ProcessingType(Enum):
@@ -99,7 +95,7 @@ class MultimodalAIService:
         
         # 支持的媒体类型
         self.supported_media_types = config.get('supported_media_types', [
-            'image', 'pdf', 'word', 'text'
+            'image', 'word', 'text'
         ])
         
         # 处理配置
@@ -118,7 +114,7 @@ class MultimodalAIService:
             self.logger.warning("图像处理功能不可用，请安装: pip install pillow opencv-python numpy")
         
         if not DOCUMENT_PROCESSING_AVAILABLE:
-            self.logger.warning("文档处理功能不可用，请安装: pip install PyPDF2 python-docx")
+            self.logger.warning("文档处理功能不可用，请安装: pip install python-docx")
     
     def process_media(self, file_path: str, processing_type: ProcessingType, 
                      options: Dict[str, Any] = None) -> ProcessingResult:
@@ -157,8 +153,6 @@ class MultimodalAIService:
         # 根据媒体类型和处理类型选择处理方法
         if media_type == MediaType.IMAGE:
             return self._process_image(file_path, processing_type, options)
-        elif media_type == MediaType.PDF:
-            return self._process_pdf(file_path, processing_type, options)
         elif media_type == MediaType.WORD:
             return self._process_word(file_path, processing_type, options)
         elif media_type == MediaType.TEXT:
@@ -179,8 +173,6 @@ class MultimodalAIService:
         if mime_type:
             if mime_type.startswith('image/'):
                 return MediaType.IMAGE
-            elif mime_type == 'application/pdf':
-                return MediaType.PDF
             elif mime_type in ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 
                               'application/msword']:
                 return MediaType.WORD
@@ -191,8 +183,6 @@ class MultimodalAIService:
         ext = Path(file_path).suffix.lower()
         if ext in ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp']:
             return MediaType.IMAGE
-        elif ext == '.pdf':
-            return MediaType.PDF
         elif ext in ['.docx', '.doc']:
             return MediaType.WORD
         elif ext in ['.txt', '.md', '.json', '.xml', '.csv']:
@@ -492,119 +482,6 @@ class MultimodalAIService:
         enhancer = ImageEnhance.Sharpness(image)
         return enhancer.enhance(2.0)
     
-    def _process_pdf(self, file_path: str, processing_type: ProcessingType, 
-                    options: Dict[str, Any] = None) -> ProcessingResult:
-        """处理PDF文档"""
-        if not DOCUMENT_PROCESSING_AVAILABLE:
-            return ProcessingResult(
-                success=False,
-                media_type=MediaType.PDF,
-                processing_type=processing_type,
-                result_data=None,
-                error_message="PDF处理库未安装"
-            )
-        
-        try:
-            import time
-            start_time = time.time()
-            
-            with open(file_path, 'rb') as file:
-                pdf_reader = PyPDF2.PdfReader(file)
-                
-                if processing_type == ProcessingType.EXTRACTION:
-                    result = self._extract_from_pdf(pdf_reader, options)
-                elif processing_type == ProcessingType.ANALYSIS:
-                    result = self._analyze_pdf(pdf_reader, options)
-                elif processing_type == ProcessingType.CONVERSION:
-                    result = self._convert_pdf(pdf_reader, options)
-                else:
-                    result = self._extract_from_pdf(pdf_reader, options)  # 默认提取
-            
-            processing_time = time.time() - start_time
-            
-            return ProcessingResult(
-                success=True,
-                media_type=MediaType.PDF,
-                processing_type=processing_type,
-                result_data=result,
-                extracted_text=result.get('text_content', ''),
-                processing_time=processing_time
-            )
-            
-        except Exception as e:
-            self.logger.error(f"PDF处理失败: {e}")
-            return ProcessingResult(
-                success=False,
-                media_type=MediaType.PDF,
-                processing_type=processing_type,
-                result_data=None,
-                error_message=str(e)
-            )
-    
-    def _extract_from_pdf(self, pdf_reader, options: Dict[str, Any] = None) -> Dict[str, Any]:
-        """从PDF中提取内容"""
-        text_content = ""
-        metadata = {}
-        
-        # 提取文本
-        for page_num, page in enumerate(pdf_reader.pages):
-            text_content += f"\n--- 第 {page_num + 1} 页 ---\n"
-            text_content += page.extract_text()
-        
-        # 提取元数据
-        if pdf_reader.metadata:
-            metadata = dict(pdf_reader.metadata)
-        
-        # 使用AI分析提取的内容
-        if options.get('use_ai_analysis', True) and text_content.strip():
-            ai_analysis = self._analyze_text_with_ai(text_content, options)
-        else:
-            ai_analysis = {}
-        
-        return {
-            'text_content': text_content,
-            'metadata': metadata,
-            'page_count': len(pdf_reader.pages),
-            'ai_analysis': ai_analysis
-        }
-    
-    def _analyze_pdf(self, pdf_reader, options: Dict[str, Any] = None) -> Dict[str, Any]:
-        """分析PDF文档"""
-        analysis = {
-            'page_count': len(pdf_reader.pages),
-            'metadata': dict(pdf_reader.metadata) if pdf_reader.metadata else {},
-            'file_size': os.path.getsize(pdf_reader.stream.name) if hasattr(pdf_reader.stream, 'name') else 0
-        }
-        
-        # 提取文本进行分析
-        text_content = ""
-        for page in pdf_reader.pages:
-            text_content += page.extract_text()
-        
-        if text_content.strip():
-            analysis['text_analysis'] = self._analyze_text_content(text_content)
-            analysis['ai_analysis'] = self._analyze_text_with_ai(text_content, options)
-        
-        return analysis
-    
-    def _convert_pdf(self, pdf_reader, options: Dict[str, Any] = None) -> Dict[str, Any]:
-        """转换PDF文档"""
-        # 提取文本内容
-        text_content = ""
-        for page in pdf_reader.pages:
-            text_content += page.extract_text()
-        
-        # 保存为文本文件
-        output_path = os.path.join(self.output_dir, f"converted_{Path(pdf_reader.stream.name).stem}.txt")
-        with open(output_path, 'w', encoding='utf-8') as f:
-            f.write(text_content)
-        
-        return {
-            'output_path': output_path,
-            'text_content': text_content,
-            'conversion_format': 'text'
-        }
-    
     def _process_word(self, file_path: str, processing_type: ProcessingType, 
                      options: Dict[str, Any] = None) -> ProcessingResult:
         """处理Word文档"""
@@ -853,7 +730,6 @@ class MultimodalAIService:
         """获取支持的格式"""
         return {
             'image': ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp'],
-            'pdf': ['.pdf'],
             'word': ['.docx', '.doc'],
             'text': ['.txt', '.md', '.json', '.xml', '.csv']
         }
@@ -862,7 +738,6 @@ class MultimodalAIService:
         """获取处理能力"""
         capabilities = {
             'image': ['recognition', 'analysis', 'extraction', 'enhancement'],
-            'pdf': ['extraction', 'analysis', 'conversion'],
             'word': ['extraction', 'analysis', 'conversion'],
             'text': ['analysis', 'extraction']
         }
@@ -872,7 +747,6 @@ class MultimodalAIService:
             capabilities['image'] = []
         
         if not DOCUMENT_PROCESSING_AVAILABLE:
-            capabilities['pdf'] = []
             capabilities['word'] = []
         
         return capabilities

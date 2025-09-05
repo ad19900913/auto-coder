@@ -13,7 +13,7 @@ from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, asdict
 from enum import Enum
 import threading
-import sqlite3
+import pymysql
 from pathlib import Path
 
 from .ai_service import AIService
@@ -86,14 +86,22 @@ class AIModelManager:
     def __init__(self, config: Dict[str, Any]):
         self.config = config
         self.logger = logging.getLogger(__name__)
-        self.db_path = config.get('database_path', './data/ai_models.db')
+        
+        # MySQL数据库配置
+        self.db_config = config.get('database', {})
+        self.host = self.db_config.get('host', 'localhost')
+        self.port = self.db_config.get('port', 3306)
+        self.user = self.db_config.get('user', 'root')
+        self.password = self.db_config.get('password', '')
+        self.database = self.db_config.get('database', 'auto_coder')
+        self.charset = self.db_config.get('charset', 'utf8mb4')
+        
         self.models_dir = config.get('models_directory', './models')
         self.performance_history_size = config.get('performance_history_size', 1000)
         self.auto_switch_threshold = config.get('auto_switch_threshold', 0.8)
         self.performance_window = config.get('performance_window_hours', 24)
         
         # 确保目录存在
-        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         os.makedirs(self.models_dir, exist_ok=True)
         
         # 初始化数据库
@@ -115,56 +123,85 @@ class AIModelManager:
     
     def _init_database(self):
         """初始化数据库"""
-        with sqlite3.connect(self.db_path) as conn:
+        try:
+            # 创建数据库连接
+            conn = pymysql.connect(
+                host=self.host,
+                port=self.port,
+                user=self.user,
+                password=self.password,
+                charset=self.charset,
+                autocommit=True
+            )
             cursor = conn.cursor()
+            
+            # 创建数据库（如果不存在）
+            cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{self.database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
+            cursor.execute(f"USE `{self.database}`")
             
             # 创建模型版本表
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS model_versions (
-                    version_id TEXT PRIMARY KEY,
-                    model_name TEXT NOT NULL,
-                    model_type TEXT NOT NULL,
-                    version TEXT NOT NULL,
-                    provider TEXT NOT NULL,
+                    version_id VARCHAR(255) PRIMARY KEY,
+                    model_name VARCHAR(255) NOT NULL,
+                    model_type VARCHAR(100) NOT NULL,
+                    version VARCHAR(100) NOT NULL,
+                    provider VARCHAR(100) NOT NULL,
                     api_key TEXT,
                     endpoint TEXT,
                     parameters TEXT,
                     performance_metrics TEXT,
-                    created_at TEXT NOT NULL,
-                    updated_at TEXT NOT NULL,
-                    status TEXT NOT NULL,
-                    usage_count INTEGER DEFAULT 0,
-                    success_rate REAL DEFAULT 0.0,
-                    avg_response_time REAL DEFAULT 0.0,
-                    cost_per_request REAL DEFAULT 0.0
-                )
+                    created_at DATETIME NOT NULL,
+                    updated_at DATETIME NOT NULL,
+                    status VARCHAR(50) NOT NULL,
+                    usage_count INT DEFAULT 0,
+                    success_rate DECIMAL(5,4) DEFAULT 0.0,
+                    avg_response_time DECIMAL(10,3) DEFAULT 0.0,
+                    cost_per_request DECIMAL(10,6) DEFAULT 0.0,
+                    INDEX idx_model_type (model_type),
+                    INDEX idx_status (status)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             ''')
             
             # 创建性能历史表
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS model_performance (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    model_version_id TEXT NOT NULL,
-                    timestamp TEXT NOT NULL,
-                    response_time REAL NOT NULL,
-                    success INTEGER NOT NULL,
-                    cost REAL NOT NULL,
-                    tokens_used INTEGER NOT NULL,
+                    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                    model_version_id VARCHAR(255) NOT NULL,
+                    timestamp DATETIME NOT NULL,
+                    response_time DECIMAL(10,3) NOT NULL,
+                    success TINYINT NOT NULL,
+                    cost DECIMAL(10,6) NOT NULL,
+                    tokens_used INT NOT NULL,
                     error_message TEXT,
-                    FOREIGN KEY (model_version_id) REFERENCES model_versions (version_id)
-                )
+                    INDEX idx_model_version_id (model_version_id),
+                    INDEX idx_timestamp (timestamp),
+                    FOREIGN KEY (model_version_id) REFERENCES model_versions (version_id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             ''')
             
-            # 创建索引
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_model_type ON model_versions (model_type)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_status ON model_versions (status)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_performance_timestamp ON model_performance (timestamp)')
+            conn.close()
+            self.logger.info("MySQL数据库初始化完成")
             
-            conn.commit()
+        except Exception as e:
+            self.logger.error(f"数据库初始化失败: {e}")
+            raise
+    
+    def _get_connection(self):
+        """获取MySQL数据库连接"""
+        return pymysql.connect(
+            host=self.host,
+            port=self.port,
+            user=self.user,
+            password=self.password,
+            database=self.database,
+            charset=self.charset,
+            autocommit=True
+        )
     
     def _load_models(self):
         """从数据库加载模型"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('SELECT * FROM model_versions')
             rows = cursor.fetchall()
@@ -190,13 +227,13 @@ class AIModelManager:
             endpoint=row[6],
             parameters=json.loads(row[7]) if row[7] else {},
             performance_metrics=json.loads(row[8]) if row[8] else {},
-            created_at=datetime.fromisoformat(row[9]),
-            updated_at=datetime.fromisoformat(row[10]),
+            created_at=row[9] if isinstance(row[9], datetime) else datetime.fromisoformat(row[9]),
+            updated_at=row[10] if isinstance(row[10], datetime) else datetime.fromisoformat(row[10]),
             status=ModelStatus(row[11]),
             usage_count=row[12],
-            success_rate=row[13],
-            avg_response_time=row[14],
-            cost_per_request=row[15]
+            success_rate=float(row[13]),
+            avg_response_time=float(row[14]),
+            cost_per_request=float(row[15])
         )
     
     def _model_version_to_row(self, model_version: ModelVersion) -> tuple:
@@ -211,8 +248,8 @@ class AIModelManager:
             model_version.endpoint,
             json.dumps(model_version.parameters),
             json.dumps(model_version.performance_metrics),
-            model_version.created_at.isoformat(),
-            model_version.updated_at.isoformat(),
+            model_version.created_at,
+            model_version.updated_at,
             model_version.status.value,
             model_version.usage_count,
             model_version.success_rate,
@@ -258,12 +295,11 @@ class AIModelManager:
         )
         
         # 保存到数据库
-        with sqlite3.connect(self.db_path) as conn:
+        with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                INSERT INTO model_versions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO model_versions VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ''', self._model_version_to_row(model_version))
-            conn.commit()
         
         # 添加到缓存
         with self._cache_lock:
@@ -301,24 +337,22 @@ class AIModelManager:
             return False
         
         # 更新数据库
-        with sqlite3.connect(self.db_path) as conn:
+        with self._get_connection() as conn:
             cursor = conn.cursor()
             
             # 将同类型的所有模型设为非活跃
             cursor.execute('''
                 UPDATE model_versions 
-                SET status = ?, updated_at = ? 
-                WHERE model_type = ?
-            ''', (ModelStatus.INACTIVE.value, datetime.now().isoformat(), model_version.model_type.value))
+                SET status = %s, updated_at = %s 
+                WHERE model_type = %s
+            ''', (ModelStatus.INACTIVE.value, datetime.now(), model_version.model_type.value))
             
             # 设置指定模型为活跃
             cursor.execute('''
                 UPDATE model_versions 
-                SET status = ?, updated_at = ? 
-                WHERE version_id = ?
-            ''', (ModelStatus.ACTIVE.value, datetime.now().isoformat(), version_id))
-            
-            conn.commit()
+                SET status = %s, updated_at = %s 
+                WHERE version_id = %s
+            ''', (ModelStatus.ACTIVE.value, datetime.now(), version_id))
         
         # 更新缓存
         with self._cache_lock:
@@ -392,15 +426,15 @@ class AIModelManager:
         )
         
         # 保存到数据库
-        with sqlite3.connect(self.db_path) as conn:
+        with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
                 INSERT INTO model_performance 
                 (model_version_id, timestamp, response_time, success, cost, tokens_used, error_message)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
             ''', (
                 version_id,
-                performance.timestamp.isoformat(),
+                performance.timestamp,
                 response_time,
                 1 if success else 0,
                 cost,
@@ -410,8 +444,6 @@ class AIModelManager:
             
             # 更新模型统计信息
             self._update_model_statistics(cursor, model_version, performance)
-            
-            conn.commit()
         
         # 更新缓存
         with self._cache_lock:
@@ -439,7 +471,7 @@ class AIModelManager:
         cursor.execute('''
             SELECT response_time, success, cost 
             FROM model_performance 
-            WHERE model_version_id = ? 
+            WHERE model_version_id = %s 
             ORDER BY timestamp DESC 
             LIMIT 100
         ''', (model_version.version_id,))
@@ -458,10 +490,10 @@ class AIModelManager:
             # 更新数据库
             cursor.execute('''
                 UPDATE model_versions 
-                SET success_rate = ?, avg_response_time = ?, cost_per_request = ?, updated_at = ?
-                WHERE version_id = ?
+                SET success_rate = %s, avg_response_time = %s, cost_per_request = %s, updated_at = %s
+                WHERE version_id = %s
             ''', (success_rate, avg_response_time, avg_cost, 
-                  datetime.now().isoformat(), model_version.version_id))
+                  datetime.now(), model_version.version_id))
             
             # 更新缓存
             model_version.success_rate = success_rate
@@ -524,14 +556,14 @@ class AIModelManager:
         """
         cutoff_time = datetime.now() - timedelta(hours=hours)
         
-        with sqlite3.connect(self.db_path) as conn:
+        with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
                 SELECT model_version_id, timestamp, response_time, success, cost, tokens_used, error_message
                 FROM model_performance 
-                WHERE model_version_id = ? AND timestamp > ?
+                WHERE model_version_id = %s AND timestamp > %s
                 ORDER BY timestamp DESC
-            ''', (version_id, cutoff_time.isoformat()))
+            ''', (version_id, cutoff_time))
             
             rows = cursor.fetchall()
             
@@ -539,7 +571,7 @@ class AIModelManager:
             for row in rows:
                 performance = ModelPerformance(
                     model_version_id=row[0],
-                    timestamp=datetime.fromisoformat(row[1]),
+                    timestamp=row[1] if isinstance(row[1], datetime) else datetime.fromisoformat(row[1]),
                     response_time=row[2],
                     success=bool(row[3]),
                     cost=row[4],
@@ -570,16 +602,14 @@ class AIModelManager:
             return False
         
         # 从数据库删除
-        with sqlite3.connect(self.db_path) as conn:
+        with self._get_connection() as conn:
             cursor = conn.cursor()
             
             # 删除性能历史
-            cursor.execute('DELETE FROM model_performance WHERE model_version_id = ?', (version_id,))
+            cursor.execute('DELETE FROM model_performance WHERE model_version_id = %s', (version_id,))
             
             # 删除模型版本
-            cursor.execute('DELETE FROM model_versions WHERE version_id = ?', (version_id,))
-            
-            conn.commit()
+            cursor.execute('DELETE FROM model_versions WHERE version_id = %s', (version_id,))
         
         # 从缓存删除
         with self._cache_lock:

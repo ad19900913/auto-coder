@@ -6,7 +6,7 @@
 import logging
 import json
 import os
-import sqlite3
+import pymysql
 import numpy as np
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional, Tuple
@@ -134,8 +134,16 @@ class MachineLearningService:
         # 检查依赖
         self._check_dependencies()
         
+        # MySQL数据库配置
+        self.db_config = config.get('database', {})
+        self.host = self.db_config.get('host', 'localhost')
+        self.port = self.db_config.get('port', 3306)
+        self.user = self.db_config.get('user', 'root')
+        self.password = self.db_config.get('password', '')
+        self.database = self.db_config.get('database', 'auto_coder')
+        self.charset = self.db_config.get('charset', 'utf8mb4')
+        
         # 初始化数据库
-        self.db_path = config.get('database_path', './data/ml_service.db')
         self._init_database()
         
         # 模型存储路径
@@ -169,103 +177,141 @@ class MachineLearningService:
     
     def _init_database(self):
         """初始化数据库"""
-        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
-        
-        with sqlite3.connect(self.db_path) as conn:
+        try:
+            # 创建数据库连接
+            conn = pymysql.connect(
+                host=self.host,
+                port=self.port,
+                user=self.user,
+                password=self.password,
+                charset=self.charset,
+                autocommit=True
+            )
             cursor = conn.cursor()
+            
+            # 创建数据库（如果不存在）
+            cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{self.database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
+            cursor.execute(f"USE `{self.database}`")
             
             # 任务指标表
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS task_metrics (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    task_id TEXT NOT NULL,
-                    task_type TEXT NOT NULL,
-                    duration REAL NOT NULL,
-                    success INTEGER NOT NULL,
-                    error_count INTEGER NOT NULL,
-                    retry_count INTEGER NOT NULL,
+                    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                    task_id VARCHAR(255) NOT NULL,
+                    task_type VARCHAR(100) NOT NULL,
+                    duration DECIMAL(10,3) NOT NULL,
+                    success TINYINT NOT NULL,
+                    error_count INT NOT NULL,
+                    retry_count INT NOT NULL,
                     resource_usage TEXT NOT NULL,
-                    timestamp TEXT NOT NULL,
+                    timestamp DATETIME NOT NULL,
                     features TEXT NOT NULL,
-                    created_at TEXT NOT NULL
-                )
+                    created_at DATETIME NOT NULL,
+                    INDEX idx_task_id (task_id),
+                    INDEX idx_timestamp (timestamp)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             ''')
             
             # 预测结果表
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS predictions (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    task_id TEXT NOT NULL,
-                    predicted_duration REAL NOT NULL,
-                    success_probability REAL NOT NULL,
-                    confidence REAL NOT NULL,
+                    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                    task_id VARCHAR(255) NOT NULL,
+                    predicted_duration DECIMAL(10,3) NOT NULL,
+                    success_probability DECIMAL(5,4) NOT NULL,
+                    confidence DECIMAL(5,4) NOT NULL,
                     risk_factors TEXT NOT NULL,
                     recommendations TEXT NOT NULL,
-                    actual_duration REAL,
-                    actual_success INTEGER,
-                    created_at TEXT NOT NULL
-                )
+                    actual_duration DECIMAL(10,3),
+                    actual_success TINYINT,
+                    created_at DATETIME NOT NULL,
+                    INDEX idx_task_id (task_id),
+                    INDEX idx_created_at (created_at)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             ''')
             
             # 异常检测结果表
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS anomalies (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    task_id TEXT NOT NULL,
-                    is_anomaly INTEGER NOT NULL,
-                    anomaly_score REAL NOT NULL,
-                    anomaly_type TEXT NOT NULL,
-                    severity TEXT NOT NULL,
+                    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                    task_id VARCHAR(255) NOT NULL,
+                    is_anomaly TINYINT NOT NULL,
+                    anomaly_score DECIMAL(10,6) NOT NULL,
+                    anomaly_type VARCHAR(100) NOT NULL,
+                    severity VARCHAR(50) NOT NULL,
                     explanation TEXT NOT NULL,
-                    created_at TEXT NOT NULL
-                )
+                    created_at DATETIME NOT NULL,
+                    INDEX idx_task_id (task_id),
+                    INDEX idx_created_at (created_at)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             ''')
             
             # A/B测试配置表
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS ab_tests (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    test_id TEXT UNIQUE NOT NULL,
-                    name TEXT NOT NULL,
+                    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                    test_id VARCHAR(255) UNIQUE NOT NULL,
+                    name VARCHAR(255) NOT NULL,
                     description TEXT NOT NULL,
                     variants TEXT NOT NULL,
                     traffic_split TEXT NOT NULL,
                     metrics TEXT NOT NULL,
-                    duration_days INTEGER NOT NULL,
-                    start_time TEXT NOT NULL,
-                    end_time TEXT NOT NULL,
-                    status TEXT NOT NULL,
-                    created_at TEXT NOT NULL
-                )
+                    duration_days INT NOT NULL,
+                    start_time DATETIME NOT NULL,
+                    end_time DATETIME NOT NULL,
+                    status VARCHAR(50) NOT NULL,
+                    created_at DATETIME NOT NULL,
+                    INDEX idx_test_id (test_id),
+                    INDEX idx_status (status)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             ''')
             
             # A/B测试结果表
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS ab_test_results (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    test_id TEXT NOT NULL,
-                    variant TEXT NOT NULL,
+                    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                    test_id VARCHAR(255) NOT NULL,
+                    variant VARCHAR(100) NOT NULL,
                     metrics TEXT NOT NULL,
-                    sample_size INTEGER NOT NULL,
+                    sample_size INT NOT NULL,
                     confidence_interval TEXT NOT NULL,
-                    p_value REAL NOT NULL,
-                    is_significant INTEGER NOT NULL,
-                    winner TEXT,
-                    created_at TEXT NOT NULL
-                )
+                    p_value DECIMAL(10,6) NOT NULL,
+                    is_significant TINYINT NOT NULL,
+                    winner VARCHAR(100),
+                    created_at DATETIME NOT NULL,
+                    INDEX idx_test_id (test_id),
+                    FOREIGN KEY (test_id) REFERENCES ab_tests (test_id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             ''')
             
-            conn.commit()
+            conn.close()
+            self.logger.info("MySQL数据库初始化完成")
+            
+        except Exception as e:
+            self.logger.error(f"数据库初始化失败: {e}")
+            raise
+    
+    def _get_connection(self):
+        """获取MySQL数据库连接"""
+        return pymysql.connect(
+            host=self.host,
+            port=self.port,
+            user=self.user,
+            password=self.password,
+            database=self.database,
+            charset=self.charset,
+            autocommit=True
+        )
     
     def add_task_metrics(self, metrics: TaskMetrics):
         """添加任务指标"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
                 INSERT INTO task_metrics 
                 (task_id, task_type, duration, success, error_count, retry_count, 
                  resource_usage, timestamp, features, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ''', (
                 metrics.task_id,
                 metrics.task_type,
@@ -274,30 +320,29 @@ class MachineLearningService:
                 metrics.error_count,
                 metrics.retry_count,
                 json.dumps(metrics.resource_usage),
-                metrics.timestamp.isoformat(),
+                metrics.timestamp,
                 json.dumps(metrics.features),
-                datetime.now().isoformat()
+                datetime.now()
             ))
-            conn.commit()
         
         self.logger.info(f"添加任务指标: {metrics.task_id}")
     
     def get_task_metrics(self, task_type: Optional[str] = None, 
                         days: int = 30) -> List[TaskMetrics]:
         """获取任务指标"""
-        with sqlite3.connect(self.db_path) as conn:
+        with self._get_connection() as conn:
             cursor = conn.cursor()
             
             query = '''
                 SELECT task_id, task_type, duration, success, error_count, retry_count,
                        resource_usage, timestamp, features
                 FROM task_metrics
-                WHERE timestamp >= ?
+                WHERE timestamp >= %s
             '''
-            params = [(datetime.now() - timedelta(days=days)).isoformat()]
+            params = [datetime.now() - timedelta(days=days)]
             
             if task_type:
-                query += ' AND task_type = ?'
+                query += ' AND task_type = %s'
                 params.append(task_type)
             
             query += ' ORDER BY timestamp DESC'
@@ -315,7 +360,7 @@ class MachineLearningService:
                 error_count=row[4],
                 retry_count=row[5],
                 resource_usage=json.loads(row[6]),
-                timestamp=datetime.fromisoformat(row[7]),
+                timestamp=row[7] if isinstance(row[7], datetime) else datetime.fromisoformat(row[7]),
                 features=json.loads(row[8])
             ))
         

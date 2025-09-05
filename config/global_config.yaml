@@ -382,8 +382,15 @@ intelligent_task_generation:
 ai_model_management:
   enabled: true
   
-  # 数据库配置
-  database_path: "./data/ai_models.db"
+  # MySQL数据库配置
+  database:
+    host: "${MYSQL_HOST:localhost}"
+    port: "${MYSQL_PORT:3306}"
+    user: "${MYSQL_USER:root}"
+    password: "${MYSQL_PASSWORD:}"
+    database: "${MYSQL_DATABASE:auto_coder}"
+    charset: "utf8mb4"
+  
   models_directory: "./models"
   
   # 性能监控配置
@@ -487,8 +494,15 @@ multimodal_ai:
 machine_learning:
   enabled: true
   
-  # 数据库配置
-  database_path: "./data/ml_service.db"
+  # MySQL数据库配置
+  database:
+    host: "${MYSQL_HOST:localhost}"
+    port: "${MYSQL_PORT:3306}"
+    user: "${MYSQL_USER:root}"
+    password: "${MYSQL_PASSWORD:}"
+    database: "${MYSQL_DATABASE:auto_coder}"
+    charset: "utf8mb4"
+  
   models_directory: "./models"
   
   # 预测模型配置
